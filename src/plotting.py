@@ -5,12 +5,12 @@ import PIL
 import yaml
 
 
-def make_plot(route, zoomout_fac=0.8, add_real_map=False, add_cities_in_map=True):
-    #fig, (ax0, ax1) = plt.subplots(2, 1, height_ratios=[3, 1])
-    fig = plt.figure(figsize=(7, 7))
-    gs = GridSpec(2, 1, height_ratios=[3, 1])
+def make_plot(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_in_map=True):
+    fig = plt.figure(figsize=(7, 9))
+    gs = GridSpec(3, 1, height_ratios=[3, 1, 1])
     ax0 = fig.add_subplot(gs[0])
     ax1 = fig.add_subplot(gs[1])
+    ax2 = fig.add_subplot(gs[2])
     lat_route_diff = abs(np.max(route.latitude) - np.min(route.latitude))
     lon_route_diff = abs(np.max(route.longitude) - np.min(route.longitude))
     map_extent = [[np.min(route.longitude) - lat_route_diff * zoomout_fac,
@@ -18,19 +18,20 @@ def make_plot(route, zoomout_fac=0.8, add_real_map=False, add_cities_in_map=True
                   [np.min(route.latitude) - lat_route_diff * zoomout_fac,
                    np.max(route.latitude) + lat_route_diff * zoomout_fac]]
     if add_cities_in_map:
-        add_cities(ax0, map_extent, color='r')
+        add_cities(ax0, map_extent, color=color)
     if add_real_map:
         plot_europe_map(ax0, route.longitude, route.latitude, zoomout_fac=zoomout_fac)
-    ax0.plot(route.longitude, route.latitude, color='r')
+    ax0.plot(route.longitude, route.latitude, color=color)
     ax0.set_xlim(map_extent[0])
     ax0.set_ylim(map_extent[1])
     ax0.set_ylabel("latitude")
     ax0.set_xlabel("longitude")
     ax0.axes.set_aspect('equal')
-    ax1.plot(route.length, route.altitude, color='r')
+    ax1.plot(route.length, route.altitude, color=color)
     ax1.set_ylabel("elevation (m)")
-    ax1.set_xlabel("distance (km)")
-    # plt.plot(route.length, route.speed)
+    ax2.plot(route.length, route.speed, color=color)
+    ax2.set_ylabel("speed (km/h)")
+    ax2.set_xlabel("distance (km)")
     plt.tight_layout()
     plt.savefig('output.png')
 
