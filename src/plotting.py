@@ -1,62 +1,79 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from src.route_reader import *
-import math
-import urllib.request as urllib2
-import io
-from PIL import Image
+import PIL
 
 
-
-def deg2num(lat_deg, lon_deg, zoom):
-  lat_rad = math.radians(lat_deg)
-  n = 2.0 ** zoom
-  xtile = int((lon_deg + 180.0) / 360.0 * n)
-  ytile = int((1.0 - math.log(math.tan(lat_rad) + (1 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
-  return (xtile, ytile)
-
-def num2deg(xtile, ytile, zoom):
-  n = 2.0 ** zoom
-  lon_deg = xtile / n * 360.0 - 180.0
-  lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile / n)))
-  lat_deg = math.degrees(lat_rad)
-  return (lat_deg, lon_deg)
+cities = {
+    "Garching" : [48.249, 11.651, "small"],
+    "Freising" : [48.400, 11.742, "small"],
+    "Erding" : [48.306, 11.907, "small"],
+    "Munich" : [48.137, 11.575, "big"],
+}
 
 
+def plot_europe_map(ax, longitude, latitude, zoomout_fac = 0.7):
+    PIL.Image.MAX_IMAGE_PIXELS = 999999999
+    img = plt.imread('europe-high-resolution-map.webp')
+    map_min_lat = 33.15
+    map_max_lat = 73.13 # 72.4
+    map_min_lon = -26.7
+    map_max_lon = 56.5 # 56.26
+    #latitude = np.array([35., 50.])  # Italy + Munich
+    #longitude = np.array([6., 18.])  # Italy + Munich
+    lat_map_diff = abs(map_max_lat-map_min_lat)
+    lon_map_diff = abs(map_max_lon-map_min_lon)
+    lat_route_diff = abs(np.max(latitude)-np.min(latitude))
+    lon_route_diff = abs(np.max(longitude)-np.min(longitude))
+    route_min_lat = np.min(latitude) - lat_route_diff*zoomout_fac
+    route_max_lat = np.max(latitude) + lat_route_diff*zoomout_fac
+    route_min_lon = np.min(longitude) - lon_route_diff*zoomout_fac
+    route_max_lon = np.max(longitude) + lon_route_diff*zoomout_fac
+    route_min_lat_pixel = ((route_min_lat - map_min_lat) / lat_map_diff * img.shape[1]).astype(int)
+    route_max_lat_pixel = ((route_max_lat - map_min_lat) / lat_map_diff * img.shape[1]).astype(int)
+    route_min_lon_pixel = ((route_min_lon - map_min_lon) / lon_map_diff * img.shape[0]).astype(int)
+    route_max_lon_pixel = ((route_max_lon - map_min_lon) / lon_map_diff * img.shape[0]).astype(int)
+    pixel_lat_lims = [img.shape[1] - route_max_lat_pixel, img.shape[1] - route_min_lat_pixel]
+    pixel_lon_lims = [img.shape[0] - route_max_lon_pixel, img.shape[0] - route_min_lon_pixel]
+    cut_image = img[pixel_lat_lims[0]:pixel_lat_lims[1], pixel_lon_lims[0]:pixel_lon_lims[1], :]
+    print(np.min(longitude), np.max(longitude), np.min(latitude), np.max(latitude))
+    print( route_min_lon,  route_max_lon ,  route_min_lat,  route_max_lat)
+    print( route_min_lon_pixel,  route_max_lon_pixel ,  route_min_lat_pixel,  route_max_lat_pixel)
+    ax.imshow(cut_image, extent=[route_min_lon, route_max_lon, route_min_lat, route_max_lat])
 
-def getImageCluster(lat_deg, lon_deg, delta_lat,  delta_long, zoom):
-    smurl = r"https://a.tile.openstreetmap.org/{0}/{1}/{2}.png"
-    xmin, ymax =deg2num(lat_deg, lon_deg, zoom)
-    xmax, ymin =deg2num(lat_deg + delta_lat, lon_deg + delta_long, zoom)
 
-    Cluster = Image.new('RGB',((xmax-xmin+1)*256-1,(ymax-ymin+1)*256-1) )
-    for xtile in range(xmin, xmax+1):
-        for ytile in range(ymin,  ymax+1):
-            try:
-                imgurl=smurl.format(zoom, xtile, ytile)
-                print("Opening: " + imgurl)
-                imgstr = urllib2.urlopen(imgurl).read()
-                tile = Image.open(io.StringIO(imgstr))
-                Cluster.paste(tile, box=((xtile-xmin)*256 ,  (ytile-ymin)*255))
-            except KeyError:
-                print("Couldn't download image")
-                tile = None
-
-    return Cluster
+def add_cities(ax, lat_route_diff, color='r'):
+    for city in cities.keys():
+        if cities[city][2] == 'small':
+            marker = '.'
+            textsize = 12
+        elif cities[city][2] == 'big':
+            marker = 's'
+            textsize = 15
+        else:
+            raise IOError("Something went wrong")
+        ax.scatter(cities[city][1], cities[city][0], color = color, marker = marker)
+        ax.text(cities[city][1], cities[city][0]+ 0.1 * lat_route_diff, city, color = color, horizontalalignment='center', fontsize = textsize)
 
 
-print("running")
-route = Route("../test/Erding_Whirlpool.gpx")
-fix, (ax0, ax1) = plt.subplots(2, 1, height_ratios=[3, 1])
-ax0.plot(route.longitude, route.latitude)
-ax0.set_ylabel("latitude")
-ax0.set_xlabel("longitude")
-ax0.axes.set_aspect('equal')
-a = getImageCluster(38.5, -77.04, 0.02,  0.05, 13)
-plt.imshow(np.asarray(a))
-ax1.plot(route.length, route.altitude)
-ax1.set_ylabel("elevation (m)")
-ax1.set_xlabel("distance (km)")
-#plt.plot(route.length, route.speed)
-plt.tight_layout()
-plt.show()
+def make_plot(route):
+    fix, (ax0, ax1) = plt.subplots(2, 1, height_ratios=[3, 1])
+    #plot_europe_map(ax0, route.longitude, route.latitude)
+    ax0.plot(route.longitude, route.latitude, color='r')
+    zoomout_fac=0.8
+    lat_route_diff = abs(np.max(route.latitude)-np.min(route.latitude))
+    lon_route_diff = abs(np.max(route.longitude)-np.min(route.longitude))
+    ax0.set_xlim([np.min(route.longitude) - lat_route_diff*zoomout_fac, np.max(route.longitude) + lon_route_diff*zoomout_fac])
+    ax0.set_ylim([np.min(route.latitude) - lat_route_diff*zoomout_fac, np.max(route.latitude) + lat_route_diff*zoomout_fac])
+    add_cities(ax0, lat_route_diff, color='r')
+    ax0.set_ylabel("latitude")
+    ax0.set_xlabel("longitude")
+    ax0.axes.set_aspect('equal')
+    #a = getImageCluster(38.5, -77.04, 0.02,  0.05, 13)
+    #plt.imshow(np.asarray(a))
+    ax1.plot(route.length, route.altitude, color='r')
+    ax1.set_ylabel("elevation (m)")
+    ax1.set_xlabel("distance (km)")
+    #plt.plot(route.length, route.speed)
+    plt.tight_layout()
+    plt.show()
