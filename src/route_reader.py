@@ -55,3 +55,14 @@ class Route:
                 else:
                     continue
         return route_array
+
+
+class SubRoute:
+    def __init__(self, route, max_iter):
+        self.file = route.file
+        self.latitude = route.latitude[:max_iter]
+        self.longitude = route.longitude[:max_iter]
+        self.altitude = route.altitude[:max_iter]
+        self.time = route.time[:max_iter]
+        self.length = route.length[:max_iter]
+        self.speed = route.speed[:max_iter]
