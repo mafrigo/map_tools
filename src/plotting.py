@@ -10,18 +10,19 @@ cities = {
 }
 
 
-def make_plot(route):
+def make_plot(route, zoomout_fac=0.8, add_real_map=False, add_cities_in_map=True):
     fix, (ax0, ax1) = plt.subplots(2, 1, height_ratios=[3, 1])
-    # plot_europe_map(ax0, route.longitude, route.latitude)
-    ax0.plot(route.longitude, route.latitude, color='r')
-    zoomout_fac = 0.8
     lat_route_diff = abs(np.max(route.latitude) - np.min(route.latitude))
     lon_route_diff = abs(np.max(route.longitude) - np.min(route.longitude))
+    if add_cities_in_map:
+        add_cities(ax0, lat_route_diff, color='r')
+    if add_real_map:
+        plot_europe_map(ax0, route.longitude, route.latitude, zoomout_fac=zoomout_fac)
+    ax0.plot(route.longitude, route.latitude, color='r')
     ax0.set_xlim([np.min(route.longitude) - lat_route_diff * zoomout_fac,
                   np.max(route.longitude) + lon_route_diff * zoomout_fac])
     ax0.set_ylim(
         [np.min(route.latitude) - lat_route_diff * zoomout_fac, np.max(route.latitude) + lat_route_diff * zoomout_fac])
-    add_cities(ax0, lat_route_diff, color='r')
     ax0.set_ylabel("latitude")
     ax0.set_xlabel("longitude")
     ax0.axes.set_aspect('equal')
@@ -48,9 +49,9 @@ def add_cities(ax, lat_route_diff, color='r'):
                 horizontalalignment='center', fontsize=textsize)
 
 
-def plot_europe_map(ax, longitude, latitude, zoomout_fac=0.7):
+def plot_europe_map(ax, longitude, latitude, zoomout_fac=0.8):
     PIL.Image.MAX_IMAGE_PIXELS = 999999999
-    img = plt.imread('europe-high-resolution-map.webp')
+    img = plt.imread('data/europe-high-resolution-map.webp')
     map_min_lat = 33.15
     map_max_lat = 73.13  # 72.4
     map_min_lon = -26.7
