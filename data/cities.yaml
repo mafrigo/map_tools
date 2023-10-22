@@ -1,7 +1,7 @@
 Garching:
   lat: 48.249
   lon: 11.651
-  size: small
+  size: big
 Freising:
   lat: 48.400
   lon: 11.742
@@ -13,4 +13,4 @@ Erding:
 Munich:
   lat: 48.137
   lon: 11.575
-  size: big
+  size: small

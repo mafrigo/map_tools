@@ -1,11 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 import PIL
 import yaml
 
 
 def make_plot(route, zoomout_fac=0.8, add_real_map=False, add_cities_in_map=True):
-    fix, (ax0, ax1) = plt.subplots(2, 1, height_ratios=[3, 1])
+    #fig, (ax0, ax1) = plt.subplots(2, 1, height_ratios=[3, 1])
+    fig = plt.figure(figsize=(7, 7))
+    gs = GridSpec(2, 1, height_ratios=[3, 1])
+    ax0 = fig.add_subplot(gs[0])
+    ax1 = fig.add_subplot(gs[1])
     lat_route_diff = abs(np.max(route.latitude) - np.min(route.latitude))
     lon_route_diff = abs(np.max(route.longitude) - np.min(route.longitude))
     map_extent = [[np.min(route.longitude) - lat_route_diff * zoomout_fac,
@@ -27,7 +32,7 @@ def make_plot(route, zoomout_fac=0.8, add_real_map=False, add_cities_in_map=True
     ax1.set_xlabel("distance (km)")
     # plt.plot(route.length, route.speed)
     plt.tight_layout()
-    plt.show()
+    plt.savefig('output.png')
 
 
 def add_cities(ax, map_extent, color='r'):
@@ -41,7 +46,7 @@ def add_cities(ax, map_extent, color='r'):
             break
         if cities[city]['size'] == 'small':
             marker = '.'
-            textsize = 12
+            textsize = 11
         elif cities[city]['size'] == 'big':
             marker = 's'
             textsize = 15
