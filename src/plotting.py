@@ -1,22 +1,33 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+import matplotlib.animation as mani
 import PIL
 import yaml
+from .route_reader import Route
 
 
-def make_plot(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_in_map=True):
-    fig = plt.figure(figsize=(7, 9))
+ffmpeg_path = r"C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
+frames_per_second = 30
+
+
+def make_plot(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_in_map=True, output_file='output.png', fig=None, map_extent="default"):
+    if fig is None:
+        fig = plt.figure(figsize=(7, 9))
+        save_figure = True
+    else:
+        save_figure = False
     gs = GridSpec(3, 1, height_ratios=[3, 1, 1])
     ax0 = fig.add_subplot(gs[0])
     ax1 = fig.add_subplot(gs[1])
     ax2 = fig.add_subplot(gs[2])
     lat_route_diff = abs(np.max(route.latitude) - np.min(route.latitude))
     lon_route_diff = abs(np.max(route.longitude) - np.min(route.longitude))
-    map_extent = [[np.min(route.longitude) - lat_route_diff * zoomout_fac,
-                  np.max(route.longitude) + lon_route_diff * zoomout_fac],
-                  [np.min(route.latitude) - lat_route_diff * zoomout_fac,
-                   np.max(route.latitude) + lat_route_diff * zoomout_fac]]
+    if map_extent == "default":
+        map_extent = [[np.min(route.longitude) - lat_route_diff * zoomout_fac,
+                      np.max(route.longitude) + lon_route_diff * zoomout_fac],
+                      [np.min(route.latitude) - lat_route_diff * zoomout_fac,
+                       np.max(route.latitude) + lat_route_diff * zoomout_fac]]
     if add_cities_in_map:
         add_cities(ax0, map_extent, color=color)
     if add_real_map:
@@ -33,7 +44,31 @@ def make_plot(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_
     ax2.set_ylabel("speed (km/h)")
     ax2.set_xlabel("distance (km)")
     plt.tight_layout()
-    plt.savefig('output.png')
+    if save_figure:
+        plt.savefig(output_file)
+
+
+def make_movie(routefile, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_in_map=True, movie_file="movie"):
+    plt.rcParams['animation.ffmpeg_path'] = ffmpeg_path
+    FFMpegWriter = mani.writers['ffmpeg']
+    metadata = dict(title=movie_file, artist='Matplotlib')
+    writer = FFMpegWriter(fps=frames_per_second, metadata=metadata)
+    fig = plt.figure(figsize=(7, 9))
+    route = Route("test/Erding_Whirlpool.gpx")
+    map_extent = [[np.min(route.longitude) - abs(np.max(route.latitude) - np.min(route.latitude)) * zoomout_fac,
+                   np.max(route.longitude) + abs(np.max(route.longitude) - np.min(route.longitude)) * zoomout_fac],
+                  [np.min(route.latitude) - abs(np.max(route.latitude) - np.min(route.latitude)) * zoomout_fac,
+                   np.max(route.latitude) + abs(np.max(route.longitude) - np.min(route.longitude)) * zoomout_fac]]
+
+    with writer.saving(fig, "output_video/" + movie_file + ".mp4", 100):
+        for i in range(1, len(route.latitude)):
+            route = Route(routefile, max_iter=i)
+            make_plot(route,
+                      zoomout_fac=zoomout_fac, color=color, add_real_map=add_real_map, add_cities_in_map=add_cities_in_map,
+                      output_file="frame"+str(i)+".png", map_extent=map_extent, fig=fig)
+            writer.grab_frame()
+            plt.clf()
+
 
 
 def add_cities(ax, map_extent, color='r'):

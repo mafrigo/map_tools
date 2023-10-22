@@ -3,16 +3,18 @@ from datetime import datetime
 
 
 class Route:
-    def __init__(self, file):
+    def __init__(self, file, max_iter=None):
         self.file = file
         if file.endswith(".gpx"):
             route_array = self.read_gpx()
         else:
             print("Only .gpx files are currently supported")
-        self.latitude = route_array[:, 0]
-        self.longitude = route_array[:, 1]
-        self.altitude = route_array[:, 2]
-        self.time = route_array[:, 3]
+        if max_iter is None:
+            max_iter = len(route_array[:, 0])
+        self.latitude = route_array[:max_iter, 0]
+        self.longitude = route_array[:max_iter, 1]
+        self.altitude = route_array[:max_iter, 2]
+        self.time = route_array[:max_iter, 3]
         self.length = self.get_length()
         self.speed = self.get_speed()
 
