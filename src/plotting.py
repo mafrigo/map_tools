@@ -1,13 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import PIL
-
-cities = {
-    "Garching": [48.249, 11.651, "small"],
-    "Freising": [48.400, 11.742, "small"],
-    "Erding": [48.306, 11.907, "small"],
-    "Munich": [48.137, 11.575, "big"],
-}
+import yaml
 
 
 def make_plot(route, zoomout_fac=0.8, add_real_map=False, add_cities_in_map=True):
@@ -35,17 +29,20 @@ def make_plot(route, zoomout_fac=0.8, add_real_map=False, add_cities_in_map=True
 
 
 def add_cities(ax, lat_route_diff, color='r'):
+    with open("data/cities.yaml", "r") as ymlfile:
+        cities = yaml.load(ymlfile, Loader=yaml.FullLoader)
+    print(cities['Garching'].keys())
     for city in cities.keys():
-        if cities[city][2] == 'small':
+        if cities[city]['size'] == 'small':
             marker = '.'
             textsize = 12
-        elif cities[city][2] == 'big':
+        elif cities[city]['size'] == 'big':
             marker = 's'
             textsize = 15
         else:
             raise IOError("Something went wrong")
-        ax.scatter(cities[city][1], cities[city][0], color=color, marker=marker)
-        ax.text(cities[city][1], cities[city][0] + 0.1 * lat_route_diff, city, color=color,
+        ax.scatter(cities[city]['lon'], cities[city]['lat'], color=color, marker=marker)
+        ax.text(cities[city]['lon'], cities[city]['lat'] + 0.1 * lat_route_diff, city, color=color,
                 horizontalalignment='center', fontsize=textsize)
 
 

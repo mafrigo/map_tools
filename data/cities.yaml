@@ -1,0 +1,16 @@
+Garching:
+  lat: 48.249
+  lon: 11.651
+  size: small
+Freising:
+  lat: 48.400
+  lon: 11.742
+  size: small
+Erding:
+  lat: 48.306
+  lon: 11.907
+  size: small
+Munich:
+  lat: 48.137
+  lon: 11.575
+  size: big
