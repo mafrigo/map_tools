@@ -5,6 +5,7 @@ import matplotlib.animation as mani
 import PIL
 import yaml
 from .route_reader import Route
+import sys
 
 
 ffmpeg_path = r"C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
@@ -53,15 +54,17 @@ def make_movie(routefile, zoomout_fac=0.8, color='r', add_real_map=False, add_ci
     FFMpegWriter = mani.writers['ffmpeg']
     metadata = dict(title=movie_file, artist='Matplotlib')
     writer = FFMpegWriter(fps=frames_per_second, metadata=metadata)
-    fig = plt.figure(figsize=(7, 9))
-    route = Route("test/Erding_Whirlpool.gpx")
+    fig = plt.figure(figsize=(7, 10))
+    route = Route(routefile)
     map_extent = [[np.min(route.longitude) - abs(np.max(route.latitude) - np.min(route.latitude)) * zoomout_fac,
                    np.max(route.longitude) + abs(np.max(route.longitude) - np.min(route.longitude)) * zoomout_fac],
                   [np.min(route.latitude) - abs(np.max(route.latitude) - np.min(route.latitude)) * zoomout_fac,
                    np.max(route.latitude) + abs(np.max(route.longitude) - np.min(route.longitude)) * zoomout_fac]]
-
+    progress_bar_length = 50
+    progress_counter = 0
+    nframes = len(route.latitude)
     with writer.saving(fig, "output_video/" + movie_file + ".mp4", 100):
-        for i in range(1, len(route.latitude)):
+        for i in range(1, nframes):
             route = Route(routefile, max_iter=i)
             make_plot(route,
                       zoomout_fac=zoomout_fac, color=color, add_real_map=add_real_map, add_cities_in_map=add_cities_in_map,
@@ -69,15 +72,20 @@ def make_movie(routefile, zoomout_fac=0.8, color='r', add_real_map=False, add_ci
             writer.grab_frame()
             plt.clf()
 
+            # Progress bar
+            progress_counter += 1
+            progress = 100 * progress_counter / nframes
+            sys.stdout.write('\r')
+            sys.stdout.write("[{:{}}] {:.1f}%".format("="*int(progress/(100/progress_bar_length)), progress_bar_length, progress))
+            sys.stdout.flush()
+
 
 
 def add_cities(ax, map_extent, color='r'):
     lat_route_diff = map_extent[1][1] - map_extent[1][0]
     with open("data/cities.yaml", "r") as ymlfile:
         cities = yaml.load(ymlfile, Loader=yaml.FullLoader)
-    print(cities['Garching'].keys())
     for city in cities.keys():
-
         if cities[city]["lat"] > map_extent[1][1] or cities[city]["lat"] < map_extent[1][0] or cities[city]["lon"] > map_extent[0][1] or cities[city]["lon"] < map_extent[0][0]:
             break
         if cities[city]['size'] == 'small':
@@ -117,7 +125,7 @@ def plot_europe_map(ax, longitude, latitude, zoomout_fac=0.8):
     pixel_lat_lims = [img.shape[1] - route_max_lat_pixel, img.shape[1] - route_min_lat_pixel]
     pixel_lon_lims = [img.shape[0] - route_max_lon_pixel, img.shape[0] - route_min_lon_pixel]
     cut_image = img[pixel_lat_lims[0]:pixel_lat_lims[1], pixel_lon_lims[0]:pixel_lon_lims[1], :]
-    print(np.min(longitude), np.max(longitude), np.min(latitude), np.max(latitude))
-    print(route_min_lon, route_max_lon, route_min_lat, route_max_lat)
-    print(route_min_lon_pixel, route_max_lon_pixel, route_min_lat_pixel, route_max_lat_pixel)
+    #print(np.min(longitude), np.max(longitude), np.min(latitude), np.max(latitude))
+    #print(route_min_lon, route_max_lon, route_min_lat, route_max_lat)
+    #print(route_min_lon_pixel, route_max_lon_pixel, route_min_lat_pixel, route_max_lat_pixel)
     ax.imshow(cut_image, extent=[route_min_lon, route_max_lon, route_min_lat, route_max_lat])
