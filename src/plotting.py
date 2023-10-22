@@ -8,15 +8,17 @@ def make_plot(route, zoomout_fac=0.8, add_real_map=False, add_cities_in_map=True
     fix, (ax0, ax1) = plt.subplots(2, 1, height_ratios=[3, 1])
     lat_route_diff = abs(np.max(route.latitude) - np.min(route.latitude))
     lon_route_diff = abs(np.max(route.longitude) - np.min(route.longitude))
+    map_extent = [[np.min(route.longitude) - lat_route_diff * zoomout_fac,
+                  np.max(route.longitude) + lon_route_diff * zoomout_fac],
+                  [np.min(route.latitude) - lat_route_diff * zoomout_fac,
+                   np.max(route.latitude) + lat_route_diff * zoomout_fac]]
     if add_cities_in_map:
-        add_cities(ax0, lat_route_diff, color='r')
+        add_cities(ax0, map_extent, color='r')
     if add_real_map:
         plot_europe_map(ax0, route.longitude, route.latitude, zoomout_fac=zoomout_fac)
     ax0.plot(route.longitude, route.latitude, color='r')
-    ax0.set_xlim([np.min(route.longitude) - lat_route_diff * zoomout_fac,
-                  np.max(route.longitude) + lon_route_diff * zoomout_fac])
-    ax0.set_ylim(
-        [np.min(route.latitude) - lat_route_diff * zoomout_fac, np.max(route.latitude) + lat_route_diff * zoomout_fac])
+    ax0.set_xlim(map_extent[0])
+    ax0.set_ylim(map_extent[1])
     ax0.set_ylabel("latitude")
     ax0.set_xlabel("longitude")
     ax0.axes.set_aspect('equal')
@@ -28,11 +30,15 @@ def make_plot(route, zoomout_fac=0.8, add_real_map=False, add_cities_in_map=True
     plt.show()
 
 
-def add_cities(ax, lat_route_diff, color='r'):
+def add_cities(ax, map_extent, color='r'):
+    lat_route_diff = map_extent[1][1] - map_extent[1][0]
     with open("data/cities.yaml", "r") as ymlfile:
         cities = yaml.load(ymlfile, Loader=yaml.FullLoader)
     print(cities['Garching'].keys())
     for city in cities.keys():
+
+        if cities[city]["lat"] > map_extent[1][1] or cities[city]["lat"] < map_extent[1][0] or cities[city]["lon"] > map_extent[0][1] or cities[city]["lon"] < map_extent[0][0]:
+            break
         if cities[city]['size'] == 'small':
             marker = '.'
             textsize = 12
@@ -42,7 +48,7 @@ def add_cities(ax, lat_route_diff, color='r'):
         else:
             raise IOError("Something went wrong")
         ax.scatter(cities[city]['lon'], cities[city]['lat'], color=color, marker=marker)
-        ax.text(cities[city]['lon'], cities[city]['lat'] + 0.1 * lat_route_diff, city, color=color,
+        ax.text(cities[city]['lon'], cities[city]['lat'] + 0.05 * lat_route_diff, city, color=color,
                 horizontalalignment='center', fontsize=textsize)
 
 
