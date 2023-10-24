@@ -9,10 +9,10 @@ import sys
 
 
 ffmpeg_path = r"C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
-frames_per_second = 60
+frames_per_second = 30
 
 
-def make_plot(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_in_map=True, output_file='output.png', fig=None, map_extent="default"):
+def make_plot(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_in_map=True, output_file='output.png', fig=None):
     if fig is None:
         fig = plt.figure(figsize=(7, 9))
         save_figure = True
@@ -24,13 +24,19 @@ def make_plot(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_
     ax0 = fig.add_subplot(gs[0])
     ax1 = fig.add_subplot(gs[1])
     ax2 = fig.add_subplot(gs[2])
-    lat_route_diff = abs(np.max(route.latitude) - np.min(route.latitude))
-    lon_route_diff = abs(np.max(route.longitude) - np.min(route.longitude))
-    if map_extent == "default":
-        map_extent = [[np.min(route.longitude) - lat_route_diff * zoomout_fac,
-                      np.max(route.longitude) + lon_route_diff * zoomout_fac],
-                      [np.min(route.latitude) - lat_route_diff * zoomout_fac,
-                       np.max(route.latitude) + lat_route_diff * zoomout_fac]]
+    if isinstance(route, SubRoute):
+        full_route = route.full_route
+    else:
+        full_route = route
+    lat_route_diff = abs(np.max(full_route.latitude) - np.min(full_route.latitude))
+    lon_route_diff = abs(np.max(full_route.longitude) - np.min(full_route.longitude))
+    map_extent = [[np.min(full_route.longitude) - lat_route_diff * zoomout_fac,
+                  np.max(full_route.longitude) + lon_route_diff * zoomout_fac],
+                  [np.min(full_route.latitude) - lat_route_diff * zoomout_fac,
+                   np.max(full_route.latitude) + lat_route_diff * zoomout_fac]]
+    height_extent = [np.min(full_route.altitude), np.max(full_route.altitude)]
+    speed_extent = [0., np.max(np.nan_to_num(full_route.speed))]
+    length_extent = [np.min(full_route.length), np.max(full_route.length)]
     if add_cities_in_map:
         add_cities(ax0, map_extent, color=color)
     if add_real_map:
@@ -42,10 +48,14 @@ def make_plot(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_
     ax0.set_xlabel("longitude")
     ax0.axes.set_aspect('equal')
     ax1.plot(route.length, route.altitude, color=color)
+    ax1.set_xlim(length_extent)
+    ax1.set_ylim(height_extent)
     ax1.set_ylabel("elevation (m)")
     ax2.plot(route.length, route.speed, color=color)
     if show_speed:
         plt.text(0., 0., route.speed[-1], color=color)
+    ax2.set_xlim(length_extent)
+    ax2.set_ylim(speed_extent)
     ax2.set_ylabel("speed (km/h)")
     ax2.set_xlabel("distance (km)")
     plt.tight_layout()
@@ -53,7 +63,7 @@ def make_plot(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_
         plt.savefig(output_file)
 
 
-def make_movie(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_in_map=True, movie_file="movie"):
+def make_movie(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_in_map=True, movie_file="movie", frame_step=1):
     plt.rcParams['animation.ffmpeg_path'] = ffmpeg_path
     FFMpegWriter = mani.writers['ffmpeg']
     metadata = dict(title=movie_file, artist='Matplotlib')
@@ -67,17 +77,17 @@ def make_movie(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities
     progress_counter = 0
     nframes = len(route.latitude)
     with writer.saving(fig, "output_video/" + movie_file + ".mp4", 100):
-        for i in range(1, nframes):
+        for i in range(1, nframes, frame_step):
             subroute = SubRoute(route, i)
             make_plot(subroute,
                       zoomout_fac=zoomout_fac, color=color, add_real_map=add_real_map, add_cities_in_map=add_cities_in_map,
-                      output_file="frame"+str(i)+".png", map_extent=map_extent, fig=fig)
+                      output_file="frame"+str(i)+".png", fig=fig)
             writer.grab_frame()
             plt.clf()
             del subroute
             # Progress bar
             progress_counter += 1
-            progress = 100 * progress_counter / nframes
+            progress = 100 * progress_counter / (nframes/frame_step)
             sys.stdout.write('\r')
             sys.stdout.write("[{:{}}] {:.1f}%".format("="*int(progress/(100/progress_bar_length)), progress_bar_length, progress))
             sys.stdout.flush()

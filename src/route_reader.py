@@ -66,3 +66,4 @@ class SubRoute:
         self.time = route.time[:max_iter]
         self.length = route.length[:max_iter]
         self.speed = route.speed[:max_iter]
+        self.full_route = route
