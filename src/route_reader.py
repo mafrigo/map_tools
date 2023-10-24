@@ -15,19 +15,33 @@ class Route:
         self.longitude = route_array[:max_iter, 1]
         self.altitude = route_array[:max_iter, 2]
         self.time = route_array[:max_iter, 3]
+        self._segments = self.get_segments()
         self.length = self.get_length()
+        self._time_intervals = self.get_time_intervals()
         self.speed = self.get_speed()
+        self.avg_speed = self.get_avg_speed()
 
-    def get_length(self):
+    def get_segments(self):
         lat_to_km = 110.574
         lon_to_km = 111.320 * np.cos(self.latitude[1:]*np.pi/180.)
         length_array = np.zeros(len(self.latitude))
         length_array[1:] = np.sqrt(
             (lat_to_km*(self.latitude[1:] - self.latitude[:-1])) ** 2 + (lon_to_km*(self.longitude[1:] - self.longitude[:-1])) ** 2)
-        return np.cumsum(length_array) #in km
+        return length_array #in km
+
+    def get_length(self):
+        return np.cumsum(self._segments) #in km
+
+    def get_time_intervals(self):
+        time_array = np.zeros(len(self.latitude))
+        time_array[1:] = self.time[1:] - self.time[:-1]
+        return time_array
+
+    def get_avg_speed(self):
+        return self.length/(self.time/3600.) #in km/h
 
     def get_speed(self):
-        return self.length/(self.time/3600.) #in km/h
+        return self._segments/(self._time_intervals/3600.) #in km/h
 
     def read_gpx(self):
         with open(self.file) as f:

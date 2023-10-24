@@ -36,7 +36,7 @@ def make_plot(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_
                    np.max(full_route.latitude) + lat_route_diff * zoomout_fac]]
     height_extent = [np.min(full_route.altitude), np.max(full_route.altitude)]
     speed_extent = [0., np.max(np.nan_to_num(full_route.speed))]
-    length_extent = [np.min(full_route.length), np.max(full_route.length)]
+    length_extent = [0., np.max(full_route.length)]
     if add_cities_in_map:
         add_cities(ax0, map_extent, color=color)
     if add_real_map:
@@ -53,7 +53,7 @@ def make_plot(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_
     ax1.set_ylabel("elevation (m)")
     ax2.plot(route.length, route.speed, color=color)
     if show_speed:
-        plt.text(0., 0., route.speed[-1], color=color)
+        plt.text(0.02*length_extent[1], 0.05*speed_extent[1], "%.1f"%(route.speed[-1]), color=color)
     ax2.set_xlim(length_extent)
     ax2.set_ylim(speed_extent)
     ax2.set_ylabel("speed (km/h)")
@@ -69,10 +69,6 @@ def make_movie(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities
     metadata = dict(title=movie_file, artist='Matplotlib')
     writer = FFMpegWriter(fps=frames_per_second, metadata=metadata)
     fig = plt.figure(figsize=(7, 10))
-    map_extent = [[np.min(route.longitude) - abs(np.max(route.latitude) - np.min(route.latitude)) * zoomout_fac,
-                   np.max(route.longitude) + abs(np.max(route.longitude) - np.min(route.longitude)) * zoomout_fac],
-                  [np.min(route.latitude) - abs(np.max(route.latitude) - np.min(route.latitude)) * zoomout_fac,
-                   np.max(route.latitude) + abs(np.max(route.longitude) - np.min(route.longitude)) * zoomout_fac]]
     progress_bar_length = 50
     progress_counter = 0
     nframes = len(route.latitude)
@@ -98,7 +94,7 @@ def add_cities(ax, map_extent, color='r'):
     with open("data/cities.yaml", "r") as ymlfile:
         cities = yaml.load(ymlfile, Loader=yaml.FullLoader)
     for city in cities.keys():
-        if cities[city]["lat"] > map_extent[1][1] or cities[city]["lat"] < map_extent[1][0] or cities[city]["lon"] > map_extent[0][1] or cities[city]["lon"] < map_extent[0][0]:
+        if not (map_extent[1][1] > cities[city]["lat"] > map_extent[1][0] and map_extent[0][1] > cities[city]["lon"] > map_extent[0][0]):
             break
         if cities[city]['size'] == 'small':
             marker = '.'
