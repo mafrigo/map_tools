@@ -95,7 +95,7 @@ def add_cities(ax, map_extent, color='r'):
         cities = yaml.load(ymlfile, Loader=yaml.FullLoader)
     for city in cities.keys():
         if not (map_extent[1][1] > cities[city]["lat"] > map_extent[1][0] and map_extent[0][1] > cities[city]["lon"] > map_extent[0][0]):
-            break
+            continue
         if cities[city]['size'] == 'small':
             marker = '.'
             textsize = 11
