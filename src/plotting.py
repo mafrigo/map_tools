@@ -6,12 +6,53 @@ import PIL
 import yaml
 from .route_reader import SubRoute
 import sys
+import cartopy.crs as ccrs
+import cartopy.io.img_tiles as cimgt
 
 ffmpeg_path = r"C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
 frames_per_second = 30
 
 
-def make_plot(route, zoomout_fac=0.8, route_color='r', city_color='k', add_real_map=False, add_cities_in_map=True, output_file='output.png',
+def get_zoom_level(delta_lat, delta_lon): #Temporary hack
+    delta = np.max([delta_lat, delta_lon])
+    return int(np.clip(np.floor(np.log2(360) - np.log2(delta)), 0, 20 )) + 1
+
+
+def plot_route_on_map(route, zoomout_fac=0.8, route_color='r', show_speed=True, show_kms=True,
+                      osm_request=None, output_file='map'):
+    if isinstance(route, SubRoute):  # movie
+        full_route = route.full_route
+    else:  # single plot
+        full_route = route
+    lat_route_diff = abs(np.max(full_route.latitude) - np.min(full_route.latitude))
+    lon_route_diff = abs(np.max(full_route.longitude) - np.min(full_route.longitude))
+    extent = [np.min(full_route.longitude) - lat_route_diff * zoomout_fac,
+                   np.max(full_route.longitude) + lon_route_diff * zoomout_fac,
+                  np.min(full_route.latitude) - lat_route_diff * zoomout_fac,
+                   np.max(full_route.latitude) + lat_route_diff * zoomout_fac]
+
+    # Plot background map
+    if osm_request is None:
+        osm_request = cimgt.OSM()
+    ax = plt.axes(projection=osm_request.crs)
+    ax.set_extent(extent)
+    ax.add_image(osm_request, get_zoom_level(lat_route_diff, lon_route_diff))  # 5 = zoom level
+
+    # Plot route
+    plt.plot(route.longitude, route.latitude, color=route_color, transform=ccrs.PlateCarree())
+    if show_kms:
+        plt.text(extent[0] - 0.02 * (extent[1] - extent[0]), extent[2] + 0.1 * (extent[3] - extent[2]), "Length:", color=route_color, transform=ccrs.PlateCarree(), horizontalalignment='right')
+        plt.text(extent[0] - 0.02 * (extent[1] - extent[0]), extent[2] + 0.05 * (extent[3] - extent[2]), "%3i km" % (route.length[-1]), color=route_color, transform=ccrs.PlateCarree(), horizontalalignment='right')
+    if show_speed:
+        plt.text(extent[1] + 0.02 * (extent[1] - extent[0]), extent[2] + 0.1 * (extent[3] - extent[2]), "Speed:", color=route_color, transform=ccrs.PlateCarree(), horizontalalignment='left')
+        plt.text(extent[1] + 0.02 * (extent[1] - extent[0]), extent[2] + 0.05 * (extent[3] - extent[2]), "%2i km/h" % (np.nan_to_num(route.speed[-1])), color=route_color, transform=ccrs.PlateCarree(), horizontalalignment='left')
+    plt.axis('off')
+    plt.tight_layout()
+    if output_file is not None:
+        plt.savefig("output/" + output_file)
+
+
+def plot_route_on_graph(route, zoomout_fac=0.8, route_color='r', city_color='k', add_cities_in_map=True, output_file='graph',
               fig=None):
     if isinstance(route, SubRoute):  # movie
         full_route = route.full_route
@@ -39,11 +80,9 @@ def make_plot(route, zoomout_fac=0.8, route_color='r', city_color='k', add_real_
     length_extent = [0., np.max(full_route.length)]
     if add_cities_in_map:
         add_cities(ax0, map_extent, color=city_color)
-    if add_real_map:
-        plot_europe_map(ax0, route.longitude, route.latitude, zoomout_fac=zoomout_fac)
     ax0.plot(route.longitude, route.latitude, color=route_color)
     if show_kms:
-        ax0.text(map_extent[0][0] + 0.02 * (map_extent[0][1] - map_extent[0][0]), map_extent[1][0] + 0.05 * (map_extent[1][1]- map_extent[1][0]), "%i km" % (route.length[-1]), color=route_color)
+        ax0.text(map_extent[0][0] + 0.02 * (map_extent[0][1] - map_extent[0][0]), map_extent[1][0] + 0.05 * (map_extent[1][1] - map_extent[1][0]), "%i km" % (route.length[-1]), color=route_color)
     ax0.set_xlim(map_extent[0])
     ax0.set_ylim(map_extent[1])
     ax0.set_ylabel("latitude")
@@ -62,26 +101,24 @@ def make_plot(route, zoomout_fac=0.8, route_color='r', city_color='k', add_real_
     ax2.set_xlabel("distance (km)")
     plt.tight_layout()
     if save_figure:
-        plt.savefig(output_file)
+        plt.savefig("output/" + output_file)
 
 
-def make_movie(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities_in_map=True, movie_file="movie",
-               frame_step=1):
+def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_step=1):
     plt.rcParams['animation.ffmpeg_path'] = ffmpeg_path
     FFMpegWriter = mani.writers['ffmpeg']
-    metadata = dict(title=movie_file, artist='Matplotlib')
+    metadata = dict(title=output_file, artist='Matplotlib')
     writer = FFMpegWriter(fps=frames_per_second, metadata=metadata)
     fig = plt.figure(figsize=(7, 10))
     progress_bar_length = 50
     progress_counter = 0
     nframes = len(route.latitude)
-    with writer.saving(fig, "output_video/" + movie_file + ".mp4", 100):
+    osm_request = cimgt.OSM()
+    with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes, frame_step):
             subroute = SubRoute(route, i)
-            make_plot(subroute,
-                      zoomout_fac=zoomout_fac, route_color=color, add_real_map=add_real_map,
-                      add_cities_in_map=add_cities_in_map,
-                      output_file="frame" + str(i) + ".png", fig=fig)
+            plot_route_on_map(subroute, osm_request=osm_request, zoomout_fac=zoomout_fac, route_color=color,
+                              output_file=None)
             writer.grab_frame()
             plt.clf()
             del subroute
