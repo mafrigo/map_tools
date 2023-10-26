@@ -79,7 +79,7 @@ def make_movie(route, zoomout_fac=0.8, color='r', add_real_map=False, add_cities
         for i in range(1, nframes, frame_step):
             subroute = SubRoute(route, i)
             make_plot(subroute,
-                      zoomout_fac=zoomout_fac, color=color, add_real_map=add_real_map,
+                      zoomout_fac=zoomout_fac, route_color=color, add_real_map=add_real_map,
                       add_cities_in_map=add_cities_in_map,
                       output_file="frame" + str(i) + ".png", fig=fig)
             writer.grab_frame()
