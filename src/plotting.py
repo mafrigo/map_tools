@@ -4,7 +4,7 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.animation as mani
 import PIL
 import yaml
-from .route_reader import Route, SubRoute
+from .route_reader import SubRoute
 import sys
 
 
@@ -93,20 +93,22 @@ def add_cities(ax, map_extent, color='r'):
     lat_route_diff = map_extent[1][1] - map_extent[1][0]
     with open("data/cities.yaml", "r") as ymlfile:
         cities = yaml.load(ymlfile, Loader=yaml.FullLoader)
-    for city in cities.keys():
-        if not (map_extent[1][1] > cities[city]["lat"] > map_extent[1][0] and map_extent[0][1] > cities[city]["lon"] > map_extent[0][0]):
+    for city in cities["all_cities"].keys():
+        if city not in cities["cities_to_be_shown"]:
             continue
-        if cities[city]['size'] == 'small':
+        if not (map_extent[1][1] > cities["all_cities"][city]["lat"] > map_extent[1][0] and map_extent[0][1] > cities["all_cities"][city]["lon"] > map_extent[0][0]):
+            continue
+        if cities["all_cities"][city]['size'] == 'small':
             marker = '.'
             textsize = 11
-        elif cities[city]['size'] == 'big':
+        elif cities["all_cities"][city]['size'] == 'big':
             marker = 's'
             textsize = 15
         else:
             raise IOError("Something went wrong")
-        ax.scatter(cities[city]['lon'], cities[city]['lat'], color=color, marker=marker)
-        ax.text(cities[city]['lon'], cities[city]['lat'] + 0.05 * lat_route_diff, city, color=color,
-                horizontalalignment='center', fontsize=textsize)
+        ax.scatter(cities["all_cities"][city]['lon'], cities["all_cities"][city]['lat'], color=color, marker=marker)
+        ax.text(cities["all_cities"][city]['lon'], cities["all_cities"][city]['lat'] + 0.05 * lat_route_diff, city,
+                color=color, horizontalalignment='center', fontsize=textsize)
 
 
 def plot_europe_map(ax, longitude, latitude, zoomout_fac=0.8):
