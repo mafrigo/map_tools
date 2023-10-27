@@ -3,23 +3,22 @@ from datetime import datetime
 
 
 class Route:
-    def __init__(self, file, max_iter=None):
+    def __init__(self, file):
         self.file = file
         if file.endswith(".gpx"):
             route_array = self.read_gpx()
         else:
             print("Only .gpx files are currently supported")
-        if max_iter is None:
-            max_iter = len(route_array[:, 0])
-        self.latitude = route_array[:max_iter, 0]
-        self.longitude = route_array[:max_iter, 1]
-        self.altitude = route_array[:max_iter, 2]
-        self.time = route_array[:max_iter, 3]
+        self.latitude = route_array[:, 0]
+        self.longitude = route_array[:, 1]
+        self.altitude = route_array[:, 2]
+        self.time = route_array[:, 3]
         self._segments = self.get_segments()
         self.length = self.get_length()
         self._time_intervals = self.get_time_intervals()
         self.speed = self.get_speed()
         self.avg_speed = self.get_avg_speed()
+        self.max_index = len(self.latitude)
 
     def get_segments(self):
         lat_to_km = 110.574
@@ -72,12 +71,13 @@ class Route:
 
 
 class SubRoute:
-    def __init__(self, route, max_iter):
+    def __init__(self, route, max_index):
         self.file = route.file
-        self.latitude = route.latitude[:max_iter]
-        self.longitude = route.longitude[:max_iter]
-        self.altitude = route.altitude[:max_iter]
-        self.time = route.time[:max_iter]
-        self.length = route.length[:max_iter]
-        self.speed = route.speed[:max_iter]
+        self.latitude = route.latitude[:max_index]
+        self.longitude = route.longitude[:max_index]
+        self.altitude = route.altitude[:max_index]
+        self.time = route.time[:max_index]
+        self.length = route.length[:max_index]
+        self.speed = route.speed[:max_index]
         self.full_route = route
+        self.max_index = max_index

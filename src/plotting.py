@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+from matplotlib import colors
 import matplotlib.animation as mani
+from matplotlib.collections import LineCollection
 import PIL
 import yaml
 from .route_reader import SubRoute
@@ -13,47 +15,75 @@ ffmpeg_path = r"C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
 frames_per_second = 30
 
 
-def get_zoom_level(delta_lat, delta_lon): #Temporary hack
+def get_zoom_level(delta_lat, delta_lon):  # Temporary hack
     delta = np.max([delta_lat, delta_lon])
-    return int(np.clip(np.floor(np.log2(360) - np.log2(delta)), 0, 20 )) + 1
+    return int(np.clip(np.floor(np.log2(360) - np.log2(delta)), 0, 20)) + 1
 
 
 def plot_route_on_map(route, zoomout_fac=0.8, route_color='r', show_speed=True, show_kms=True,
                       osm_request=None, output_file='map'):
     if isinstance(route, SubRoute):  # movie
         full_route = route.full_route
+        add_trail_flag = True
     else:  # single plot
         full_route = route
+        add_trail_flag = False
     lat_route_diff = abs(np.max(full_route.latitude) - np.min(full_route.latitude))
     lon_route_diff = abs(np.max(full_route.longitude) - np.min(full_route.longitude))
     extent = [np.min(full_route.longitude) - lat_route_diff * zoomout_fac,
-                   np.max(full_route.longitude) + lon_route_diff * zoomout_fac,
-                  np.min(full_route.latitude) - lat_route_diff * zoomout_fac,
-                   np.max(full_route.latitude) + lat_route_diff * zoomout_fac]
+              np.max(full_route.longitude) + lon_route_diff * zoomout_fac,
+              np.min(full_route.latitude) - lat_route_diff * zoomout_fac,
+              np.max(full_route.latitude) + lat_route_diff * zoomout_fac]
 
     # Plot background map
     if osm_request is None:
         osm_request = cimgt.OSM()
     ax = plt.axes(projection=osm_request.crs)
     ax.set_extent(extent)
-    ax.add_image(osm_request, get_zoom_level(lat_route_diff, lon_route_diff))  # 5 = zoom level
+    ax.add_image(osm_request, get_zoom_level(lat_route_diff, lon_route_diff))
 
     # Plot route
-    plt.plot(route.longitude, route.latitude, color=route_color, transform=ccrs.PlateCarree())
+    plt.plot(route.longitude, route.latitude, color=route_color, transform=ccrs.PlateCarree(), lw=1)
     if show_kms:
-        plt.text(extent[0] - 0.02 * (extent[1] - extent[0]), extent[2] + 0.1 * (extent[3] - extent[2]), "Length:", color=route_color, transform=ccrs.PlateCarree(), horizontalalignment='right')
-        plt.text(extent[0] - 0.02 * (extent[1] - extent[0]), extent[2] + 0.05 * (extent[3] - extent[2]), "%3i km" % (route.length[-1]), color=route_color, transform=ccrs.PlateCarree(), horizontalalignment='right')
+        plt.text(extent[0] - 0.02 * (extent[1] - extent[0]), extent[2] + 0.1 * (extent[3] - extent[2]), "Length:",
+                 color=route_color, transform=ccrs.PlateCarree(), horizontalalignment='right')
+        plt.text(extent[0] - 0.02 * (extent[1] - extent[0]), extent[2] + 0.05 * (extent[3] - extent[2]),
+                 "%3i km" % (route.length[-1]), color=route_color, transform=ccrs.PlateCarree(),
+                 horizontalalignment='right')
     if show_speed:
-        plt.text(extent[1] + 0.02 * (extent[1] - extent[0]), extent[2] + 0.1 * (extent[3] - extent[2]), "Speed:", color=route_color, transform=ccrs.PlateCarree(), horizontalalignment='left')
-        plt.text(extent[1] + 0.02 * (extent[1] - extent[0]), extent[2] + 0.05 * (extent[3] - extent[2]), "%2i km/h" % (np.nan_to_num(route.speed[-1])), color=route_color, transform=ccrs.PlateCarree(), horizontalalignment='left')
+        plt.text(extent[1] + 0.02 * (extent[1] - extent[0]), extent[2] + 0.1 * (extent[3] - extent[2]), "Speed:",
+                 color=route_color, transform=ccrs.PlateCarree(), horizontalalignment='left')
+        plt.text(extent[1] + 0.02 * (extent[1] - extent[0]), extent[2] + 0.05 * (extent[3] - extent[2]),
+                 "%2i km/h" % (np.nan_to_num(route.speed[-1])), color=route_color, transform=ccrs.PlateCarree(),
+                 horizontalalignment='left')
+    if add_trail_flag:
+        add_trail(ax, route, color=route_color)
     plt.axis('off')
     plt.tight_layout()
     if output_file is not None:
         plt.savefig("output/" + output_file)
 
 
-def plot_route_on_graph(route, zoomout_fac=0.8, route_color='r', city_color='k', add_cities_in_map=True, output_file='graph',
-              fig=None):
+def add_trail(ax, route, trail_length=200, color='r'):
+    # Plot trail of particle
+    if isinstance(route, SubRoute):
+        alpha = np.zeros(route.full_route.max_index)
+    else:
+        alpha = np.zeros(route.max_index)
+    if route.max_index > trail_length:
+        alpha[route.max_index - trail_length:route.max_index] = np.arange(trail_length).astype(float) / float(trail_length)
+    else:
+        alpha[0:route.max_index] = np.arange(route.max_index).astype(float) / float(route.max_index)
+    colorfade = colors.to_rgb(color) + (0.0,)
+    cmap = colors.LinearSegmentedColormap.from_list('my', [colorfade, color])
+    points = np.vstack((route.longitude, route.latitude)).T.reshape(-1, 1, 2)
+    segments = np.hstack((points[:-1], points[1:]))
+    lc = LineCollection(segments, lw=3, zorder=10, transform=ccrs.PlateCarree(), array=alpha, cmap=cmap) #cmap=cmap,
+    ax.add_collection(lc)
+
+
+def plot_route_on_graph(route, zoomout_fac=0.8, route_color='r', city_color='k', add_cities_in_map=True,
+                        output_file='graph', fig=None):
     if isinstance(route, SubRoute):  # movie
         full_route = route.full_route
         save_figure = False
@@ -82,7 +112,9 @@ def plot_route_on_graph(route, zoomout_fac=0.8, route_color='r', city_color='k',
         add_cities(ax0, map_extent, color=city_color)
     ax0.plot(route.longitude, route.latitude, color=route_color)
     if show_kms:
-        ax0.text(map_extent[0][0] + 0.02 * (map_extent[0][1] - map_extent[0][0]), map_extent[1][0] + 0.05 * (map_extent[1][1] - map_extent[1][0]), "%i km" % (route.length[-1]), color=route_color)
+        ax0.text(map_extent[0][0] + 0.02 * (map_extent[0][1] - map_extent[0][0]),
+                 map_extent[1][0] + 0.05 * (map_extent[1][1] - map_extent[1][0]), "%i km" % (route.length[-1]),
+                 color=route_color)
     ax0.set_xlim(map_extent[0])
     ax0.set_ylim(map_extent[1])
     ax0.set_ylabel("latitude")
