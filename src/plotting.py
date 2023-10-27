@@ -4,7 +4,6 @@ from matplotlib.gridspec import GridSpec
 from matplotlib import colors
 import matplotlib.animation as mani
 from matplotlib.collections import LineCollection
-import PIL
 import yaml
 from .route_reader import SubRoute
 import sys
@@ -15,9 +14,9 @@ ffmpeg_path = r"C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
 frames_per_second = 30
 
 
-def get_zoom_level(delta_lat, delta_lon):  # Temporary hack
-    delta = np.max([delta_lat, delta_lon])
-    return int(np.clip(np.floor(np.log2(360) - np.log2(delta)), 0, 20)) + 1
+def get_zoom_level(delta_lat, delta_lon, extra_zoom=1):
+    delta = np.max([2.*delta_lat, delta_lon])
+    return int(np.clip(np.round(np.log2(360/delta)), 0, 20)) + extra_zoom
 
 
 def plot_route_on_map(route, zoomout_fac=0.8, route_color='r', show_speed=True, show_kms=True,
@@ -51,7 +50,7 @@ def plot_route_on_map(route, zoomout_fac=0.8, route_color='r', show_speed=True, 
                  "%3i km" % (route.length[-1]), color=route_color, transform=ccrs.PlateCarree(),
                  horizontalalignment='right')
     if show_speed:
-        plt.text(extent[1] + 0.02 * (extent[1] - extent[0]), extent[2] + 0.1 * (extent[3] - extent[2]), "Speed:",
+        plt.text(extent[1] + 0.02 * (extent[1] - extent[0]), extent[2] + 0.1 * (extent[3] - extent[2]), "Speed:  ",
                  color=route_color, transform=ccrs.PlateCarree(), horizontalalignment='left')
         plt.text(extent[1] + 0.02 * (extent[1] - extent[0]), extent[2] + 0.05 * (extent[3] - extent[2]),
                  "%2i km/h" % (np.nan_to_num(route.speed[-1])), color=route_color, transform=ccrs.PlateCarree(),
@@ -186,33 +185,3 @@ def add_cities(ax, map_extent, color='r'):
         ax.scatter(cities["all_cities"][city]['lon'], cities["all_cities"][city]['lat'], color=color, marker=marker)
         ax.text(cities["all_cities"][city]['lon'], cities["all_cities"][city]['lat'] + 0.05 * lat_route_diff, city,
                 color=color, horizontalalignment='center', fontsize=textsize)
-
-
-def plot_europe_map(ax, longitude, latitude, zoomout_fac=0.8):
-    PIL.Image.MAX_IMAGE_PIXELS = 999999999
-    img = plt.imread('data/europe-high-resolution-map.webp')
-    map_min_lat = 33.15
-    map_max_lat = 73.13  # 72.4
-    map_min_lon = -26.7
-    map_max_lon = 56.5  # 56.26
-    # latitude = np.array([35., 50.])  # Italy + Munich
-    # longitude = np.array([6., 18.])  # Italy + Munich
-    lat_map_diff = abs(map_max_lat - map_min_lat)
-    lon_map_diff = abs(map_max_lon - map_min_lon)
-    lat_route_diff = abs(np.max(latitude) - np.min(latitude))
-    lon_route_diff = abs(np.max(longitude) - np.min(longitude))
-    route_min_lat = np.min(latitude) - lat_route_diff * zoomout_fac
-    route_max_lat = np.max(latitude) + lat_route_diff * zoomout_fac
-    route_min_lon = np.min(longitude) - lon_route_diff * zoomout_fac
-    route_max_lon = np.max(longitude) + lon_route_diff * zoomout_fac
-    route_min_lat_pixel = ((route_min_lat - map_min_lat) / lat_map_diff * img.shape[1]).astype(int)
-    route_max_lat_pixel = ((route_max_lat - map_min_lat) / lat_map_diff * img.shape[1]).astype(int)
-    route_min_lon_pixel = ((route_min_lon - map_min_lon) / lon_map_diff * img.shape[0]).astype(int)
-    route_max_lon_pixel = ((route_max_lon - map_min_lon) / lon_map_diff * img.shape[0]).astype(int)
-    pixel_lat_lims = [img.shape[1] - route_max_lat_pixel, img.shape[1] - route_min_lat_pixel]
-    pixel_lon_lims = [img.shape[0] - route_max_lon_pixel, img.shape[0] - route_min_lon_pixel]
-    cut_image = img[pixel_lat_lims[0]:pixel_lat_lims[1], pixel_lon_lims[0]:pixel_lon_lims[1], :]
-    # print(np.min(longitude), np.max(longitude), np.min(latitude), np.max(latitude))
-    # print(route_min_lon, route_max_lon, route_min_lat, route_max_lat)
-    # print(route_min_lon_pixel, route_max_lon_pixel, route_min_lat_pixel, route_max_lat_pixel)
-    ax.imshow(cut_image, extent=[route_min_lon, route_max_lon, route_min_lat, route_max_lat])
