@@ -64,12 +64,13 @@ def plot_route_on_map(route, zoomout_fac=0.8, route_color='r', show_speed=True, 
         plt.savefig("output/" + output_file)
 
 
-def add_trail(ax, route, trail_length=200, color='r'):
-    # Plot trail of particle
+def add_trail(ax, route, color='r'):
     if isinstance(route, SubRoute):
-        alpha = np.zeros(route.full_route.max_index)
+        route_length = route.full_route.max_index
     else:
-        alpha = np.zeros(route.max_index)
+        route_length = route.max_index
+    alpha = np.zeros(route_length)
+    trail_length = int(0.05*route_length)
     if route.max_index > trail_length:
         alpha[route.max_index - trail_length:route.max_index] = np.arange(trail_length).astype(float) / float(trail_length)
     else:
@@ -78,7 +79,7 @@ def add_trail(ax, route, trail_length=200, color='r'):
     cmap = colors.LinearSegmentedColormap.from_list('my', [colorfade, color])
     points = np.vstack((route.longitude, route.latitude)).T.reshape(-1, 1, 2)
     segments = np.hstack((points[:-1], points[1:]))
-    lc = LineCollection(segments, lw=3, zorder=10, transform=ccrs.PlateCarree(), array=alpha, cmap=cmap) #cmap=cmap,
+    lc = LineCollection(segments, lw=3, zorder=10, transform=ccrs.PlateCarree(), array=alpha, cmap=cmap)
     ax.add_collection(lc)
 
 
