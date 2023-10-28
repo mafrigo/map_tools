@@ -1,4 +1,4 @@
-from src.plotting import plot_route_on_map, plot_route_on_graph, make_movie
+from src.plotting import plot_route_on_map, make_movie
 from src.route_reader import Route
 
 #route = Route("route_files/Erding_Whirlpool.gpx")
