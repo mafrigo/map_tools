@@ -29,6 +29,7 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
         show_total_elevation = True
         show_current_speed = False
         show_avg_speed = True
+    total_length = route.length[-1]
     if extent is None:
         lat_route_diff = abs(np.max(full_route.latitude) - np.min(full_route.latitude))
         lon_route_diff = abs(np.max(full_route.longitude) - np.min(full_route.longitude))
@@ -41,7 +42,6 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
         lon_size = (extent[1] - extent[0])/(1.+zoomout_fac)
         route = route[np.logical_and(np.logical_and(route.longitude > extent[0], route.longitude < extent[1]),
                                      np.logical_and(route.latitude > extent[2], route.latitude < extent[3]))]
-
     # Plot background map
     if osm_request is None:
         osm_request = cimgt.OSM()
@@ -53,7 +53,7 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
     plt.plot(route.longitude, route.latitude, color=route_color, transform=ccrs.PlateCarree(), lw=1)
     if show_length:
         plt.text(extent[0] + 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Total length: %3i km" % (full_route.length[-1]), color=route_color, transform=ccrs.PlateCarree(),
+                 "Total length: %3i km" % total_length, color=route_color, transform=ccrs.PlateCarree(),
                  horizontalalignment='left')
     if show_current_elevation:
         plt.text(extent[0] + 0.5 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
