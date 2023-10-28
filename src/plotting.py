@@ -1,15 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
-import matplotlib.animation as mani
 from matplotlib.collections import LineCollection
-from .route_reader import SubRoute
-import sys
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
-
-ffmpeg_path = r"C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
-frames_per_second = 30
+from .route_reader import SubRoute
 
 
 def get_zoom_level(delta, extra_zoom=1.2):
@@ -58,7 +53,7 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
     plt.plot(route.longitude, route.latitude, color=route_color, transform=ccrs.PlateCarree(), lw=1)
     if show_length:
         plt.text(extent[0] + 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Total length: %3i km" % (route.length[-1]), color=route_color, transform=ccrs.PlateCarree(),
+                 "Total length: %3i km" % (full_route.length[-1]), color=route_color, transform=ccrs.PlateCarree(),
                  horizontalalignment='left')
     if show_current_elevation:
         plt.text(extent[0] + 0.5 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
@@ -66,7 +61,7 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
                  horizontalalignment='center')
     if show_total_elevation:
         plt.text(extent[0] + 0.5 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Elevation gain: %4i m" % (route.elevation_gain[-1]), color=route_color, transform=ccrs.PlateCarree(),
+                 "Total elevation: %4i m" % (full_route.elevation_gain[-1]), color=route_color, transform=ccrs.PlateCarree(),
                  horizontalalignment='center')
     if show_current_speed:
         plt.text(extent[1] - 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
@@ -102,40 +97,3 @@ def add_trail(ax, route, color='r'):
     lc = LineCollection(segments, lw=3, zorder=10, transform=ccrs.PlateCarree(), array=alpha, cmap=cmap)
     ax.add_collection(lc)
 
-
-def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_step=1, delta_if_centered=None, cut_at_frame=None):
-    plt.rcParams['animation.ffmpeg_path'] = ffmpeg_path
-    FFMpegWriter = mani.writers['ffmpeg']
-    metadata = dict(title=output_file, artist='Matplotlib')
-    writer = FFMpegWriter(fps=frames_per_second, metadata=metadata)
-    fig = plt.figure(figsize=(7, 10))
-    progress_bar_length = 50
-    progress_counter = 0
-    nframes = len(route.latitude)
-    osm_request = cimgt.OSM()
-    with writer.saving(fig, "output/" + output_file + ".mp4", 100):
-        for i in range(1, nframes, frame_step):
-            subroute = route[0:i]
-            if delta_if_centered is not None:
-                extent = [subroute.longitude[-1] - 0.5 * delta_if_centered * (1. + zoomout_fac),
-                          subroute.longitude[-1] + 0.5 * delta_if_centered * (1. + zoomout_fac),
-                          subroute.latitude[-1] - 0.25 * delta_if_centered * (1. + zoomout_fac),
-                          subroute.latitude[-1] + 0.25 * delta_if_centered * (1. + zoomout_fac)]
-            else:
-                extent = None
-            plot_route_on_map(subroute, osm_request=osm_request, zoomout_fac=zoomout_fac, route_color=color,
-                              output_file=None, extent=extent)
-            writer.grab_frame()
-            plt.clf()
-            del subroute
-            # Progress bar
-            progress_counter += 1
-            progress = 100 * progress_counter / (nframes / frame_step)
-            sys.stdout.write('\r')
-            sys.stdout.write(
-                "[{:{}}] {:.1f}%".format("=" * int(progress / (100 / progress_bar_length)), progress_bar_length,
-                                         progress))
-            sys.stdout.flush()
-            if cut_at_frame is not None:
-                if i >= cut_at_frame:
-                    break
