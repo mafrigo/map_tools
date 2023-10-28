@@ -1,10 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
 from matplotlib import colors
 import matplotlib.animation as mani
 from matplotlib.collections import LineCollection
-import yaml
 from .route_reader import SubRoute
 import sys
 import cartopy.crs as ccrs
@@ -108,60 +106,6 @@ def add_trail(ax, route, color='r'):
     ax.add_collection(lc)
 
 
-def plot_route_on_graph(route, zoomout_fac=0.8, route_color='r', city_color='k', add_cities_in_map=True,
-                        output_file='graph', fig=None):
-    if isinstance(route, SubRoute):  # movie
-        full_route = route.full_route
-        save_figure = False
-        show_speed = True
-        show_kms = True
-    else:  # single plot
-        full_route = route
-        fig = plt.figure(figsize=(7, 9))
-        save_figure = True
-        show_speed = False
-        show_kms = False
-    gs = GridSpec(3, 1, height_ratios=[3, 1, 1])
-    ax0 = fig.add_subplot(gs[0])
-    ax1 = fig.add_subplot(gs[1])
-    ax2 = fig.add_subplot(gs[2])
-    lat_route_diff = abs(np.max(full_route.latitude) - np.min(full_route.latitude))
-    lon_route_diff = abs(np.max(full_route.longitude) - np.min(full_route.longitude))
-    map_extent = [[np.min(full_route.longitude) - lat_route_diff * zoomout_fac,
-                   np.max(full_route.longitude) + lon_route_diff * zoomout_fac],
-                  [np.min(full_route.latitude) - lat_route_diff * zoomout_fac,
-                   np.max(full_route.latitude) + lat_route_diff * zoomout_fac]]
-    height_extent = [np.min(full_route.altitude), np.max(full_route.altitude)]
-    speed_extent = [0., np.max(np.nan_to_num(full_route.speed))]
-    length_extent = [0., np.max(full_route.length)]
-    if add_cities_in_map:
-        add_cities(ax0, map_extent, color=city_color)
-    ax0.plot(route.longitude, route.latitude, color=route_color)
-    if show_kms:
-        ax0.text(map_extent[0][0] + 0.02 * (map_extent[0][1] - map_extent[0][0]),
-                 map_extent[1][0] + 0.05 * (map_extent[1][1] - map_extent[1][0]), "%i km" % (route.length[-1]),
-                 color=route_color)
-    ax0.set_xlim(map_extent[0])
-    ax0.set_ylim(map_extent[1])
-    ax0.set_ylabel("latitude")
-    ax0.set_xlabel("longitude")
-    ax0.axes.set_aspect('equal')
-    ax1.plot(route.length, route.altitude, color=route_color)
-    ax1.set_xlim(length_extent)
-    ax1.set_ylim(height_extent)
-    ax1.set_ylabel("elevation (m)")
-    ax2.plot(route.length, route.speed, color=route_color)
-    if show_speed:
-        plt.text(0.02 * length_extent[1], 0.05 * speed_extent[1], "%.1f km/h" % (route.speed[-1]), color=route_color)
-    ax2.set_xlim(length_extent)
-    ax2.set_ylim(speed_extent)
-    ax2.set_ylabel("speed (km/h)")
-    ax2.set_xlabel("distance (km)")
-    plt.tight_layout()
-    if save_figure:
-        plt.savefig("output/" + output_file)
-
-
 def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_step=1, delta_if_centered=None, cut_at_frame=None):
     plt.rcParams['animation.ffmpeg_path'] = ffmpeg_path
     FFMpegWriter = mani.writers['ffmpeg']
@@ -191,26 +135,3 @@ def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_ste
             if cut_at_frame is not None:
                 if i >= cut_at_frame:
                     break
-
-
-def add_cities(ax, map_extent, color='r'):
-    lat_route_diff = map_extent[1][1] - map_extent[1][0]
-    with open("data/cities.yaml", "r") as ymlfile:
-        cities = yaml.load(ymlfile, Loader=yaml.FullLoader)
-    for city in cities["all_cities"].keys():
-        if city not in cities["cities_to_be_shown"]:
-            continue
-        if not (map_extent[1][1] > cities["all_cities"][city]["lat"] > map_extent[1][0] and map_extent[0][1] >
-                cities["all_cities"][city]["lon"] > map_extent[0][0]):
-            continue
-        if cities["all_cities"][city]['size'] == 'small':
-            marker = '.'
-            textsize = 11
-        elif cities["all_cities"][city]['size'] == 'big':
-            marker = 's'
-            textsize = 15
-        else:
-            raise IOError("Something went wrong")
-        ax.scatter(cities["all_cities"][city]['lon'], cities["all_cities"][city]['lat'], color=color, marker=marker)
-        ax.text(cities["all_cities"][city]['lon'], cities["all_cities"][city]['lat'] + 0.05 * lat_route_diff, city,
-                color=color, horizontalalignment='center', fontsize=textsize)
