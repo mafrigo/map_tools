@@ -44,8 +44,8 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
                   np.max(full_route.latitude) + lon_size * zoomout_fac]
     else:
         lon_size = (extent[1] - extent[0])/(1.+zoomout_fac)
-        min_index = np.min(np.arange(route.max_index)[np.logical_and(np.logical_and(route.longitude > extent[0], route.longitude < extent[1]), np.logical_and(route.latitude > extent[2], route.latitude < extent[3]))])
-        route = SubRoute(full_route, min_index, route.max_index)
+        route = route[np.logical_and(np.logical_and(route.longitude > extent[0], route.longitude < extent[1]),
+                                     np.logical_and(route.latitude > extent[2], route.latitude < extent[3]))]
 
     # Plot background map
     if osm_request is None:
@@ -115,7 +115,7 @@ def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_ste
     osm_request = cimgt.OSM()
     with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes, frame_step):
-            subroute = SubRoute(route, 0, i)
+            subroute = route[0:i]
             if delta_if_centered is not None:
                 extent = [subroute.longitude[-1] - 0.5 * delta_if_centered * (1. + zoomout_fac),
                           subroute.longitude[-1] + 0.5 * delta_if_centered * (1. + zoomout_fac),

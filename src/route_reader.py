@@ -75,17 +75,25 @@ class Route:
                     continue
         return route_array
 
+    def __getitem__(self, key):
+        return SubRoute(self, key)
+
 
 class SubRoute:
-    def __init__(self, route, min_index, max_index):
+    def __init__(self, route, route_slice):
         self.file = route.file
-        self.latitude = route.latitude[min_index:max_index]
-        self.longitude = route.longitude[min_index:max_index]
-        self.altitude = route.altitude[min_index:max_index]
-        self.time = route.time[min_index:max_index]
-        self.length = route.length[min_index:max_index]
-        self.speed = route.speed[min_index:max_index]
-        self.elevation_gain = route.elevation_gain[min_index:max_index]
-        self.full_route = route
-        self.min_index = min_index
-        self.max_index = max_index
+        self.latitude = route.latitude[route_slice]
+        self.longitude = route.longitude[route_slice]
+        self.altitude = route.altitude[route_slice]
+        self.time = route.time[route_slice]
+        self.length = route.length[route_slice]
+        self.speed = route.speed[route_slice]
+        self.elevation_gain = route.elevation_gain[route_slice]
+        if isinstance(route, Route):
+            self.full_route = route
+        if isinstance(route, SubRoute):
+            self.full_route = route.full_route
+        self.max_index = len(self.latitude)
+
+    def __getitem__(self, key):
+        return SubRoute(self, key)
