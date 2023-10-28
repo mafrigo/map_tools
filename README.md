@@ -10,3 +10,4 @@ See main.py
 - refactor delta_if_centered to a more readable parameter set.
 - extract config into yaml file.
 - refactor into proper python package.
+- automatic tests with Github Actions.

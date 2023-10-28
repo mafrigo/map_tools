@@ -77,14 +77,15 @@ class Route:
 
 
 class SubRoute:
-    def __init__(self, route, max_index):
+    def __init__(self, route, min_index, max_index):
         self.file = route.file
-        self.latitude = route.latitude[:max_index]
-        self.longitude = route.longitude[:max_index]
-        self.altitude = route.altitude[:max_index]
-        self.time = route.time[:max_index]
-        self.length = route.length[:max_index]
-        self.speed = route.speed[:max_index]
-        self.elevation_gain = route.elevation_gain[:max_index]
+        self.latitude = route.latitude[min_index:max_index]
+        self.longitude = route.longitude[min_index:max_index]
+        self.altitude = route.altitude[min_index:max_index]
+        self.time = route.time[min_index:max_index]
+        self.length = route.length[min_index:max_index]
+        self.speed = route.speed[min_index:max_index]
+        self.elevation_gain = route.elevation_gain[min_index:max_index]
         self.full_route = route
+        self.min_index = min_index
         self.max_index = max_index
