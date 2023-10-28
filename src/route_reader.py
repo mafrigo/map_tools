@@ -18,6 +18,7 @@ class Route:
         self._time_intervals = self.get_time_intervals()
         self.speed = self.get_speed()
         self.avg_speed = self.get_avg_speed()
+        self.elevation_gain = self.get_elevation_gain()
         self.max_index = len(self.latitude)
 
     def get_segments(self):
@@ -28,6 +29,11 @@ class Route:
             (lat_to_km*(self.latitude[1:] - self.latitude[:-1])) ** 2 + (lon_to_km*(self.longitude[1:] - self.longitude[:-1])) ** 2)
         return length_array #in km
 
+    def get_elevation_gain(self):
+        elev_array = np.zeros(len(self.latitude))
+        elev_array[1:] = self.altitude[1:] - self.altitude[:-1]
+        return np.cumsum(np.clip(elev_array, 0., None)) #in m
+
     def get_length(self):
         return np.cumsum(self._segments) #in km
 
@@ -37,10 +43,10 @@ class Route:
         return time_array
 
     def get_avg_speed(self):
-        return self.length/(self.time/3600.) #in km/h
+        return np.nan_to_num(self.length/(self.time/3600.)) #in km/h
 
     def get_speed(self):
-        return self._segments/(self._time_intervals/3600.) #in km/h
+        return np.nan_to_num(self._segments/(self._time_intervals/3600.)) #in km/h
 
     def read_gpx(self):
         with open(self.file) as f:
@@ -79,5 +85,6 @@ class SubRoute:
         self.time = route.time[:max_index]
         self.length = route.length[:max_index]
         self.speed = route.speed[:max_index]
+        self.elevation_gain = route.elevation_gain[:max_index]
         self.full_route = route
         self.max_index = max_index
