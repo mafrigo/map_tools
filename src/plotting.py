@@ -16,8 +16,8 @@ def get_zoom_level(delta, extra_zoom=1.2):
     return int(np.clip(np.round(np.log2((extra_zoom+1.)*360./delta)), 0, 20))
 
 
-def plot_route_on_map(route, zoomout_fac=0.8, route_color='r',
-                      osm_request=None, output_file='map', delta_if_centered=None):
+def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
+                      osm_request=None, output_file='map'):
     if isinstance(route, SubRoute):  # movie
         full_route = route.full_route
         add_trail_flag = True
@@ -34,7 +34,7 @@ def plot_route_on_map(route, zoomout_fac=0.8, route_color='r',
         show_total_elevation = True
         show_current_speed = False
         show_avg_speed = True
-    if delta_if_centered is None:
+    if extent is None:
         lat_route_diff = abs(np.max(full_route.latitude) - np.min(full_route.latitude))
         lon_route_diff = abs(np.max(full_route.longitude) - np.min(full_route.longitude))
         lon_size = np.max([2*lat_route_diff, lon_route_diff])
@@ -43,11 +43,7 @@ def plot_route_on_map(route, zoomout_fac=0.8, route_color='r',
                   np.min(full_route.latitude) - lon_size * zoomout_fac,
                   np.max(full_route.latitude) + lon_size * zoomout_fac]
     else:
-        lon_size = delta_if_centered
-        extent = [route.longitude[-1] - 0.5 * lon_size * (1.+zoomout_fac),
-                  route.longitude[-1] + 0.5 * lon_size * (1.+zoomout_fac),
-                  route.latitude[-1] - 0.25 * lon_size * (1.+zoomout_fac),
-                  route.latitude[-1] + 0.25 * lon_size * (1.+zoomout_fac)]
+        lon_size = (extent[1] - extent[0])/(1.+zoomout_fac)
         min_index = np.min(np.arange(route.max_index)[np.logical_and(np.logical_and(route.longitude > extent[0], route.longitude < extent[1]), np.logical_and(route.latitude > extent[2], route.latitude < extent[3]))])
         route = SubRoute(full_route, min_index, route.max_index)
 
@@ -120,8 +116,15 @@ def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_ste
     with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes, frame_step):
             subroute = SubRoute(route, 0, i)
+            if delta_if_centered is not None:
+                extent = [subroute.longitude[-1] - 0.5 * delta_if_centered * (1. + zoomout_fac),
+                          subroute.longitude[-1] + 0.5 * delta_if_centered * (1. + zoomout_fac),
+                          subroute.latitude[-1] - 0.25 * delta_if_centered * (1. + zoomout_fac),
+                          subroute.latitude[-1] + 0.25 * delta_if_centered * (1. + zoomout_fac)]
+            else:
+                extent = None
             plot_route_on_map(subroute, osm_request=osm_request, zoomout_fac=zoomout_fac, route_color=color,
-                              output_file=None, delta_if_centered=delta_if_centered)
+                              output_file=None, extent=extent)
             writer.grab_frame()
             plt.clf()
             del subroute
