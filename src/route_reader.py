@@ -53,7 +53,6 @@ class Route:
             lines = f.readlines()
             n_segments = " ".join(lines).count("</trkpt>")
             route_array = np.zeros([n_segments, 4])
-            #print(route_array.shape)
             segment_counter = 0
             for line in lines:
                 stripped_line = line.strip()
