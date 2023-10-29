@@ -8,7 +8,7 @@ t0 = time.time()
 #route = Route("route_files/Erding_Whirlpool.gpx")
 #route = Route("route_files/Morning_Ride.gpx")
 #route = Route("route_files/Munich_Budapest.gpx")
-route = Route("route_files/Munich_Prague.gpx")
+route = Route("route_files/Erding_Whirlpool.gpx")
 #route = Route("route_files/Ronde_van_Noord_Holland.gpx")
 
 #Plot whole route on a map

@@ -10,7 +10,7 @@ ffmpeg_path = r"C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
 frames_per_second = 30
 progress_bar_length = 50
 zoomout_nframes = 180
-still_final_frames = 30
+still_final_frames = 60
 
 
 def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_step=1, delta_if_centered=None, cut_at_frame=None, final_zoomout=True):
@@ -75,5 +75,5 @@ def update_progress_bar(progress_counter, nframes, frame_step=1):
     sys.stdout.write('\r')
     sys.stdout.write(
         "[{:{}}] {:.1f}%".format("=" * int(frame_step * progress / (100 / progress_bar_length)), progress_bar_length,
-                                 progress))
+                                 frame_step * progress))
     sys.stdout.flush()
