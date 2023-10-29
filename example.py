@@ -1,6 +1,6 @@
-from src.route_reader import Route
-from src.plotting import plot_route_on_map
-from src.movie import make_movie_with_dynamic_map, make_movie_with_static_map
+from map_tools.route_reader import Route
+from map_tools.plotting import plot_route_on_map
+from map_tools.movie import make_movie_with_dynamic_map, make_movie_with_static_map
 import time
 
 

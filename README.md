@@ -9,13 +9,12 @@ Produces map movies and plots from GPS routes (.gpx format). Maps come from Open
 
 
 ## Instructions
-- Adapt the config in config.yaml; in particular edit the ffmpeg executable path to your local file.
+- Install the required packages (see setup.py) and ffmpeg.
+- Adapt the config in config.yaml, in particular the ffmpeg executable path.
 - Add your route in .gpx format to the route_files folder.
-- Edit main.py to load your route file and create a movie from it.
-- Run main.py.
+- Edit example.py to load your route file and create a movie from it.
+- Run example.py.
 
 ## TODO:
 - join .gpx routes using +.
-- refactor delta_if_centered to a more readable parameter set.
-- refactor into proper python package.
-- automatic tests with Github Actions.
+- add tests?
