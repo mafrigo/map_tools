@@ -12,15 +12,20 @@ zoomout_nframes = 180
 still_final_frames = 60
 
 
-def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_step=1, delta_if_centered=None, cut_at_frame=None, final_zoomout=True):
+def init_movie(output_file):
     plt.rcParams['animation.ffmpeg_path'] = ffmpeg_path
     FFMpegWriter = mani.writers['ffmpeg']
     metadata = dict(title=output_file, artist='Matplotlib')
     writer = FFMpegWriter(fps=frames_per_second, metadata=metadata)
     fig = plt.figure(figsize=(7, 10))
+    osm = cimgt.OSM()
+    return fig, writer, osm
+
+
+def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_step=1, delta_if_centered=None, cut_at_frame=None, final_zoomout=True):
+    fig, writer, osm_request = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
-    osm_request = cimgt.OSM()
     with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]

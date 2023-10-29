@@ -54,22 +54,26 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
         show_total_elevation = True
         show_current_speed = False
         show_avg_speed = True
+
     total_length = route.length[-1]
     if extent is None:
         extent = get_frame_extent(full_route, zoomout_fac=zoomout_fac)
     else:
         route = route[np.logical_and(np.logical_and(route.longitude > extent[0], route.longitude < extent[1]),
                                      np.logical_and(route.latitude > extent[2], route.latitude < extent[3]))]
-    lon_size = (extent[1] - extent[0]) / (1. + zoomout_fac)
+    deg_size = (extent[1] - extent[0]) / (1. + zoomout_fac)
+
     # Plot background map
     if osm_request is None:
         osm_request = cimgt.OSM()
     ax = plt.axes(projection=osm_request.crs)
     ax.set_extent(extent)
-    ax.add_image(osm_request, get_zoom_level(lon_size))
+    ax.add_image(osm_request, get_zoom_level(deg_size))
 
     # Plot route
     plt.plot(route.longitude, route.latitude, color=route_color, transform=ccrs.PlateCarree(), lw=1)
+
+    # Plot data
     if show_length:
         plt.text(extent[0] + 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
                  "Total length: %3i km" % total_length, color=route_color, transform=ccrs.PlateCarree(),
@@ -91,8 +95,10 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
         plt.text(extent[1] - 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
                  "Average speed: %2i km/h" % (np.mean(moving_speed)), color=route_color, transform=ccrs.PlateCarree(),
                  horizontalalignment='right')
+
     if add_trail_flag:
         add_trail(ax, route, color=route_color)
+
     plt.axis('off')
     plt.tight_layout()
     if output_file is not None:
@@ -116,4 +122,3 @@ def add_trail(ax, route, color='r'):
     segments = np.hstack((points[:-1], points[1:]))
     lc = LineCollection(segments, lw=3, zorder=10, transform=ccrs.PlateCarree(), array=alpha, cmap=cmap)
     ax.add_collection(lc)
-
