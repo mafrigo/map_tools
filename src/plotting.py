@@ -42,18 +42,14 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
         full_route = route.full_route
         add_trail_flag = True
         show_length = True
-        show_current_elevation = True
-        show_total_elevation = False
-        show_current_speed = True
-        show_avg_speed = False
+        show_current_stats = True
+        show_total_stats = False
     else:  # single plot
         full_route = route
         add_trail_flag = False
         show_length = True
-        show_current_elevation = False
-        show_total_elevation = True
-        show_current_speed = False
-        show_avg_speed = True
+        show_current_stats = False
+        show_total_stats = True
 
     total_length = route.length[-1]
     if extent is None:
@@ -78,19 +74,17 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
         plt.text(extent[0] + 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
                  "Total length: %3i km" % total_length, color=route_color, transform=ccrs.PlateCarree(),
                  horizontalalignment='left')
-    if show_current_elevation:
+    if show_current_stats:
         plt.text(extent[0] + 0.5 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
                  "Elevation: %4i m" % (route.altitude[-1]), color=route_color, transform=ccrs.PlateCarree(),
                  horizontalalignment='center')
-    if show_total_elevation:
-        plt.text(extent[0] + 0.5 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Total elevation: %4i m" % (full_route.elevation_gain[-1]), color=route_color, transform=ccrs.PlateCarree(),
-                 horizontalalignment='center')
-    if show_current_speed:
         plt.text(extent[1] - 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
                  "Current speed: %2i km/h" % (np.nan_to_num(route.speed[-1])), color=route_color, transform=ccrs.PlateCarree(),
                  horizontalalignment='right')
-    if show_avg_speed:
+    if show_total_stats:
+        plt.text(extent[0] + 0.5 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
+                 "Total elevation: %4i m" % (full_route.elevation_gain[-1]), color=route_color, transform=ccrs.PlateCarree(),
+                 horizontalalignment='center')
         moving_speed = route.speed[route.speed > 10.]
         plt.text(extent[1] - 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
                  "Avg. speed: %2i km/h" % (np.mean(moving_speed)), color=route_color, transform=ccrs.PlateCarree(),
