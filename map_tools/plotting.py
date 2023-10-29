@@ -11,7 +11,7 @@ cfg = get_yaml_config()
 
 
 def get_zoom_level(delta):
-    return int(np.clip(np.round(np.log2((cfg["osm_extra_zoom"]+1.)*360./delta)), 0, 20))
+    return int(np.clip(np.round(np.log2((cfg["osm_extra_zoom"] + 1.) * 360. / delta)), 0, 20))
 
 
 def get_frame_extent(route, fixed_shape=True, fixed_size=0., center_on_last=False):
@@ -39,8 +39,7 @@ def get_frame_extent(route, fixed_shape=True, fixed_size=0., center_on_last=Fals
     return extent
 
 
-def plot_route_on_map(route, extent=None,
-                      osm_request=None, output_file='map'):
+def plot_route_on_map(route, extent=None, osm_request=None, output_file='map'):
     if isinstance(route, SubRoute):  # movie
         full_route = route.full_route
         add_trail_flag = True
@@ -82,15 +81,18 @@ def plot_route_on_map(route, extent=None,
                  "Elevation: %4i m" % (route.altitude[-1]), color=cfg["route_color"], transform=ccrs.PlateCarree(),
                  horizontalalignment='center')
         plt.text(extent[1] - 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Current speed: %2i km/h" % (np.nan_to_num(route.speed[-1])), color=cfg["route_color"], transform=ccrs.PlateCarree(),
+                 "Current speed: %2i km/h" % (np.nan_to_num(route.speed[-1])), color=cfg["route_color"],
+                 transform=ccrs.PlateCarree(),
                  horizontalalignment='right')
     if show_total_stats:
         plt.text(extent[0] + 0.5 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Total elevation: %4i m" % (full_route.elevation_gain[-1]), color=cfg["route_color"], transform=ccrs.PlateCarree(),
+                 "Total elevation: %4i m" % (full_route.elevation_gain[-1]), color=cfg["route_color"],
+                 transform=ccrs.PlateCarree(),
                  horizontalalignment='center')
         moving_speed = route.speed[route.speed > 10.]
         plt.text(extent[1] - 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Avg. speed: %2i km/h" % (np.mean(moving_speed)), color=cfg["route_color"], transform=ccrs.PlateCarree(),
+                 "Avg. speed: %2i km/h" % (np.mean(moving_speed)), color=cfg["route_color"],
+                 transform=ccrs.PlateCarree(),
                  horizontalalignment='right')
 
     if add_trail_flag:
@@ -108,9 +110,10 @@ def add_trail(ax, route):
     else:
         route_length = route.max_index
     alpha = np.zeros(route_length)
-    trail_length = int(0.05*route_length)
+    trail_length = int(0.05 * route_length)
     if route.max_index > trail_length:
-        alpha[route.max_index - trail_length:route.max_index] = np.arange(trail_length).astype(float) / float(trail_length)
+        alpha[route.max_index - trail_length:route.max_index] = np.arange(trail_length).astype(float) / float(
+            trail_length)
     else:
         alpha[0:route.max_index] = np.arange(route.max_index).astype(float) / float(route.max_index)
     colorfade = colors.to_rgb(cfg["route_color"]) + (0.0,)

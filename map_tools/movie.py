@@ -12,13 +12,13 @@ def init_movie(output_file):
     plt.rcParams['animation.ffmpeg_path'] = cfg["ffmpeg_path"]
     FFMpegWriter = mani.writers['ffmpeg']
     metadata = dict(title=output_file, artist='Matplotlib')
-    writer = FFMpegWriter(fps= cfg["frames_per_second"], metadata=metadata)
+    writer = FFMpegWriter(fps=cfg["frames_per_second"], metadata=metadata)
     fig = plt.figure(figsize=(7, 10))
     osm = cimgt.OSM()
     return fig, writer, osm
 
 
-def make_movie_with_static_map(route, output_file="movie", frame_step=1, cut_at_frame=None, final_zoomout=True):
+def make_movie_with_static_map(route, output_file="movie", frame_step=1, cut_at_frame=None):
     fig, writer, osm_request = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
@@ -36,7 +36,8 @@ def make_movie_with_static_map(route, output_file="movie", frame_step=1, cut_at_
                     break
 
 
-def make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, output_file="movie", frame_step=1, cut_at_frame=None, final_zoomout=True):
+def make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, output_file="movie", frame_step=1, cut_at_frame=None,
+                                final_zoomout=True):
     fig, writer, osm_request = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
@@ -59,7 +60,9 @@ def make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, output_file="m
             final_extent = get_frame_extent(route)
             progress_counter = 0
             for i in range(cfg["zoomout_nframes"]):
-                current_extent = [initial_extent[j] + (float(i)/cfg["zoomout_nframes"])*(final_extent[j] - initial_extent[j]) for j in range(len(initial_extent))]
+                current_extent = [
+                    initial_extent[j] + (float(i) / cfg["zoomout_nframes"]) * (final_extent[j] - initial_extent[j]) for
+                    j in range(len(initial_extent))]
                 plot_route_on_map(route, osm_request=osm_request, output_file=None, extent=current_extent)
                 writer.grab_frame()
                 plt.clf()
@@ -77,6 +80,6 @@ def update_progress_bar(progress_counter, nframes, frame_step=1):
     progress = 100 * progress_counter / nframes
     sys.stdout.write('\r')
     sys.stdout.write(
-        "[{:{}}] {:.1f}%".format("=" * int(frame_step * progress / (100 / cfg["progress_bar_length"])), cfg["progress_bar_length"],
-                                 frame_step * progress))
+        "[{:{}}] {:.1f}%".format("=" * int(frame_step * progress / (100 / cfg["progress_bar_length"])),
+                                 cfg["progress_bar_length"], frame_step * progress))
     sys.stdout.flush()
