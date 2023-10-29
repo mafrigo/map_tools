@@ -2,6 +2,7 @@
 Produces map movies and plots from GPS routes (.gpx format). Maps come from OpenStreetMap.
 
 ## Instructions
+Set the ffmpeg executable path in movie.py
 See main.py
 
 ## TODO:

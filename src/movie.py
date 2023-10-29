@@ -1,9 +1,8 @@
 import sys
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as mani
 import cartopy.io.img_tiles as cimgt
-from .plotting import plot_route_on_map
+from .plotting import plot_route_on_map, get_frame_extent
 
 
 ffmpeg_path = r"C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
@@ -26,10 +25,7 @@ def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_ste
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
             if delta_if_centered is not None:
-                extent = [subroute.longitude[-1] - 0.5 * delta_if_centered * (1. + zoomout_fac),
-                          subroute.longitude[-1] + 0.5 * delta_if_centered * (1. + zoomout_fac),
-                          subroute.latitude[-1] - 0.25 * delta_if_centered * (1. + zoomout_fac),
-                          subroute.latitude[-1] + 0.25 * delta_if_centered * (1. + zoomout_fac)]
+                extent = get_frame_extent(subroute, zoomout_fac=zoomout_fac, fixed_size=delta_if_centered, center_on_last=True)
             else:
                 extent = None
             plot_route_on_map(subroute, osm_request=osm_request, zoomout_fac=zoomout_fac, route_color=color,
@@ -45,13 +41,7 @@ def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_ste
         if final_zoomout:
             print("\nRendering final zoomout")
             initial_extent = extent
-            lat_route_diff = abs(np.max(route.latitude) - np.min(route.latitude))
-            lon_route_diff = abs(np.max(route.longitude) - np.min(route.longitude))
-            lon_size = np.max([2*lat_route_diff, lon_route_diff])
-            final_extent = [np.min(route.longitude) - lon_size * zoomout_fac,
-                  np.max(route.longitude) + lon_size * zoomout_fac,
-                  np.min(route.latitude) - lon_size * zoomout_fac,
-                  np.max(route.latitude) + lon_size * zoomout_fac]
+            final_extent = get_frame_extent(route, zoomout_fac=zoomout_fac)
             progress_counter = 0
             for i in range(zoomout_nframes):
                 current_extent = [initial_extent[j] + (float(i)/zoomout_nframes)*(final_extent[j] - initial_extent[j]) for j in range(len(initial_extent))]

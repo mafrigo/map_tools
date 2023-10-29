@@ -11,6 +11,31 @@ def get_zoom_level(delta, extra_zoom=1.2):
     return int(np.clip(np.round(np.log2((extra_zoom+1.)*360./delta)), 0, 20))
 
 
+def get_frame_extent(route, zoomout_fac=0., fixed_shape=True, fixed_size=0., center_on_last=False):
+    if fixed_size == 0.:
+        lat_route_diff = abs(np.max(route.latitude) - np.min(route.latitude))
+        lon_route_diff = abs(np.max(route.longitude) - np.min(route.longitude))
+        deg_size = np.max([2 * lat_route_diff, lon_route_diff])
+    else:
+        deg_size = fixed_size
+    if not fixed_shape:
+        extent = [np.min(route.longitude) - deg_size * zoomout_fac,
+                  np.max(route.longitude) + deg_size * zoomout_fac,
+                  np.min(route.latitude) - deg_size * zoomout_fac,
+                  np.max(route.latitude) + deg_size * zoomout_fac]
+    else:
+        if center_on_last:
+            center = [route.longitude[-1], route.latitude[-1]]
+        else:
+            center = [np.min(route.longitude) + 0.5 * (np.max(route.longitude) - np.min(route.longitude)),
+                      np.min(route.latitude) + 0.5 * (np.max(route.latitude) - np.min(route.latitude))]
+        extent = [center[0] - 0.5 * deg_size * (1. + zoomout_fac),
+                  center[0] + 0.5 * deg_size * (1. + zoomout_fac),
+                  center[1] - 0.25 * deg_size * (1. + zoomout_fac),
+                  center[1] + 0.25 * deg_size * (1. + zoomout_fac)]
+    return extent
+
+
 def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
                       osm_request=None, output_file='map'):
     if isinstance(route, SubRoute):  # movie
@@ -31,17 +56,11 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
         show_avg_speed = True
     total_length = route.length[-1]
     if extent is None:
-        lat_route_diff = abs(np.max(full_route.latitude) - np.min(full_route.latitude))
-        lon_route_diff = abs(np.max(full_route.longitude) - np.min(full_route.longitude))
-        lon_size = np.max([2*lat_route_diff, lon_route_diff])
-        extent = [np.min(full_route.longitude) - lon_size * zoomout_fac,
-                  np.max(full_route.longitude) + lon_size * zoomout_fac,
-                  np.min(full_route.latitude) - lon_size * zoomout_fac,
-                  np.max(full_route.latitude) + lon_size * zoomout_fac]
+        extent = get_frame_extent(full_route, zoomout_fac=zoomout_fac)
     else:
-        lon_size = (extent[1] - extent[0])/(1.+zoomout_fac)
         route = route[np.logical_and(np.logical_and(route.longitude > extent[0], route.longitude < extent[1]),
                                      np.logical_and(route.latitude > extent[2], route.latitude < extent[3]))]
+    lon_size = (extent[1] - extent[0]) / (1. + zoomout_fac)
     # Plot background map
     if osm_request is None:
         osm_request = cimgt.OSM()
