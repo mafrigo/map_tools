@@ -18,17 +18,32 @@ def init_movie(output_file):
     return fig, writer, osm
 
 
-def make_movie(route, output_file="movie", frame_step=1, delta_if_centered=None, cut_at_frame=None, final_zoomout=True):
+def make_movie_with_static_map(route, output_file="movie", frame_step=1, cut_at_frame=None, final_zoomout=True):
     fig, writer, osm_request = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
     with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
-            if delta_if_centered is not None:
-                extent = get_frame_extent(subroute, fixed_size=delta_if_centered, center_on_last=True)
-            else:
-                extent = None
+            plot_route_on_map(subroute, osm_request=osm_request, output_file=None, extent=None)
+            writer.grab_frame()
+            plt.clf()
+            del subroute
+            progress_counter += 1
+            update_progress_bar(progress_counter, nframes, frame_step=frame_step)
+            if cut_at_frame is not None:
+                if i >= cut_at_frame:
+                    break
+
+
+def make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, output_file="movie", frame_step=1, cut_at_frame=None, final_zoomout=True):
+    fig, writer, osm_request = init_movie(output_file)
+    progress_counter = 0
+    nframes = len(route.latitude)
+    with writer.saving(fig, "output/" + output_file + ".mp4", 100):
+        for i in range(1, nframes, frame_step):
+            subroute = route[0:i]
+            extent = get_frame_extent(subroute, fixed_size=map_frame_size_in_deg, center_on_last=True)
             plot_route_on_map(subroute, osm_request=osm_request, output_file=None, extent=extent)
             writer.grab_frame()
             plt.clf()
