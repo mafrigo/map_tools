@@ -10,6 +10,7 @@ ffmpeg_path = r"C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
 frames_per_second = 30
 progress_bar_length = 50
 zoomout_nframes = 180
+still_final_frames = 30
 
 
 def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_step=1, delta_if_centered=None, cut_at_frame=None, final_zoomout=True):
@@ -36,9 +37,8 @@ def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_ste
             writer.grab_frame()
             plt.clf()
             del subroute
-            # Progress bar
             progress_counter += 1
-            update_progress_bar(progress_counter, nframes)
+            update_progress_bar(progress_counter, nframes, frame_step=frame_step)
             if cut_at_frame is not None:
                 if i >= cut_at_frame:
                     break
@@ -60,13 +60,20 @@ def make_movie(route, zoomout_fac=0.8, color='r', output_file="movie", frame_ste
                 writer.grab_frame()
                 plt.clf()
                 progress_counter += 1
-                update_progress_bar(progress_counter, zoomout_nframes)
+                update_progress_bar(progress_counter, zoomout_nframes + still_final_frames)
+            for i in range(still_final_frames):
+                plot_route_on_map(route, osm_request=osm_request, zoomout_fac=zoomout_fac, route_color=color,
+                                  output_file=None, extent=final_extent)
+                writer.grab_frame()
+                plt.clf()
+                progress_counter += 1
+                update_progress_bar(progress_counter, zoomout_nframes + still_final_frames)
 
 
-def update_progress_bar(progress_counter, nframes):
+def update_progress_bar(progress_counter, nframes, frame_step=1):
     progress = 100 * progress_counter / nframes
     sys.stdout.write('\r')
     sys.stdout.write(
-        "[{:{}}] {:.1f}%".format("=" * int(progress / (100 / progress_bar_length)), progress_bar_length,
+        "[{:{}}] {:.1f}%".format("=" * int(frame_step * progress / (100 / progress_bar_length)), progress_bar_length,
                                  progress))
     sys.stdout.flush()
