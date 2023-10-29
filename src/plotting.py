@@ -93,7 +93,7 @@ def plot_route_on_map(route, zoomout_fac=0.4, route_color='r', extent=None,
     if show_avg_speed:
         moving_speed = route.speed[route.speed > 10.]
         plt.text(extent[1] - 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Average speed: %2i km/h" % (np.mean(moving_speed)), color=route_color, transform=ccrs.PlateCarree(),
+                 "Avg. speed: %2i km/h" % (np.mean(moving_speed)), color=route_color, transform=ccrs.PlateCarree(),
                  horizontalalignment='right')
 
     if add_trail_flag:
