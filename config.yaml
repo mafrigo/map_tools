@@ -1,0 +1,8 @@
+ffmpeg_path: 'C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe'
+frames_per_second: 30
+progress_bar_length: 50
+zoomout_nframes: 180
+still_final_nframes: 60
+zoomout_fac: 0.2
+osm_extra_zoom: 1.2
+route_color: r
