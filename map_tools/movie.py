@@ -46,7 +46,10 @@ def make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, output_file="m
     with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
-            extent = get_frame_extent(subroute, fixed_size=map_frame_size_in_deg, center_on_last=True)
+            if i > 5:
+                extent = get_frame_extent(subroute, fixed_size=map_frame_size_in_deg, center_on="last_smooth")
+            else:
+                extent = get_frame_extent(subroute, fixed_size=map_frame_size_in_deg, center_on="last")
             plot_route_on_map(subroute, osm_request=osm_request, output_file=None, extent=extent)
             writer.grab_frame()
             plt.clf()

@@ -14,7 +14,7 @@ def get_zoom_level(delta):
     return int(np.clip(np.round(np.log2((cfg["osm_extra_zoom"] + 1.) * 360. / delta)), 0, 20))
 
 
-def get_frame_extent(route, fixed_shape=True, fixed_size=0., center_on_last=False):
+def get_frame_extent(route, fixed_shape=True, fixed_size=0., center_on="frame"):
     if fixed_size == 0.:
         lat_route_diff = abs(np.max(route.latitude) - np.min(route.latitude))
         lon_route_diff = abs(np.max(route.longitude) - np.min(route.longitude))
@@ -27,11 +27,15 @@ def get_frame_extent(route, fixed_shape=True, fixed_size=0., center_on_last=Fals
                   np.min(route.latitude) - deg_size * cfg["zoomout_fac"],
                   np.max(route.latitude) + deg_size * cfg["zoomout_fac"]]
     else:
-        if center_on_last:
-            center = [route.longitude[-1], route.latitude[-1]]
-        else:
+        if center_on == "frame":
             center = [np.min(route.longitude) + 0.5 * (np.max(route.longitude) - np.min(route.longitude)),
                       np.min(route.latitude) + 0.5 * (np.max(route.latitude) - np.min(route.latitude))]
+        elif center_on == "last":
+            center = [route.longitude[-1], route.latitude[-1]]
+        elif center_on == "last_smooth":
+            center = [np.mean(route.longitude[-5:-1]), np.mean(route.latitude[-5:-1])]
+        else:
+            raise IOError("Centering mode can only be last, frame, or last_smooth")
         extent = [center[0] - 0.5 * deg_size * (1. + cfg["zoomout_fac"]),
                   center[0] + 0.5 * deg_size * (1. + cfg["zoomout_fac"]),
                   center[1] - 0.25 * deg_size * (1. + cfg["zoomout_fac"]),
