@@ -10,10 +10,11 @@ cfg = get_yaml_config()
 
 def init_movie(output_file):
     plt.rcParams['animation.ffmpeg_path'] = cfg["ffmpeg_path"]
-    FFMpegWriter = mani.writers['ffmpeg']
+    plt.rcParams['savefig.bbox'] = "tight"
     metadata = dict(title=output_file, artist='Matplotlib')
-    writer = FFMpegWriter(fps=cfg["frames_per_second"], metadata=metadata)
-    fig = plt.figure(figsize=(7, 10))
+    fig = plt.figure()
+    writer = mani.FFMpegWriter(fps=cfg["frames_per_second"], metadata=metadata, extra_args=['-vcodec', 'libx264'])
+    writer.setup(fig, output_file)
     osm = cimgt.OSM()
     return fig, writer, osm
 
@@ -34,6 +35,7 @@ def make_movie_with_static_map(route, output_file="movie", frame_step=1, cut_at_
             if cut_at_frame is not None:
                 if i >= cut_at_frame:
                     break
+    writer.finish()
 
 
 def make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, output_file="movie", frame_step=1, cut_at_frame=None,
