@@ -13,32 +13,34 @@ class Route:
         self.longitude = route_array[:, 1]
         self.altitude = route_array[:, 2]
         self.time = route_array[:, 3]
-        self._segments = self.get_segments()
+        self.n_gps_entries = len(self.latitude)
+        self._length_segments = self.get_length_segments()
         self.length = self.get_length()
         self._time_intervals = self.get_time_intervals()
         self.speed = self.get_speed()
         self.avg_speed = self.get_avg_speed()
         self.elevation_gain = self.get_elevation_gain()
         self.max_index = len(self.latitude)
+        self.route_segment_id = self.get_route_segments()
 
-    def get_segments(self):
+    def get_length_segments(self):
         lat_to_km = 110.574
         lon_to_km = 111.320 * np.cos(self.latitude[1:]*np.pi/180.)
-        length_array = np.zeros(len(self.latitude))
+        length_array = np.zeros(self.n_gps_entries)
         length_array[1:] = np.sqrt(
             (lat_to_km*(self.latitude[1:] - self.latitude[:-1])) ** 2 + (lon_to_km*(self.longitude[1:] - self.longitude[:-1])) ** 2)
         return length_array #in km
 
     def get_elevation_gain(self):
-        elev_array = np.zeros(len(self.latitude))
+        elev_array = np.zeros(self.n_gps_entries)
         elev_array[1:] = self.altitude[1:] - self.altitude[:-1]
         return np.cumsum(np.clip(elev_array, 0., None)) #in m
 
     def get_length(self):
-        return np.cumsum(self._segments) #in km
+        return np.cumsum(self._length_segments) #in km
 
     def get_time_intervals(self):
-        time_array = np.zeros(len(self.latitude))
+        time_array = np.zeros(self.n_gps_entries)
         time_array[1:] = self.time[1:] - self.time[:-1]
         return time_array
 
@@ -46,7 +48,20 @@ class Route:
         return np.nan_to_num(self.length/(self.time/3600.)) #in km/h
 
     def get_speed(self):
-        return np.nan_to_num(self._segments/(self._time_intervals/3600.)) #in km/h
+        return np.nan_to_num(self._length_segments/(self._time_intervals/3600.)) #in km/h
+
+    def get_route_segments(self, minimum_speed_for_segment=10.):
+        is_segment = np.zeros(self.n_gps_entries)
+        is_segment[self.speed > minimum_speed_for_segment] = 1
+        latest_id = 1
+        segment_id = np.zeros(self.n_gps_entries)
+        for i in range(self.n_gps_entries):
+            if is_segment[i]:
+                segment_id[i] = latest_id
+            else:
+                if is_segment[i+1]:
+                    latest_id += 1
+        return segment_id
 
     def read_gpx(self):
         with open(self.file) as f:
