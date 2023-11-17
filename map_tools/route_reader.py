@@ -53,14 +53,13 @@ class Route:
     def get_route_segments(self, minimum_speed_for_segment=10.):
         is_segment = np.zeros(self.n_gps_entries)
         is_segment[self.speed > minimum_speed_for_segment] = 1
-        latest_id = 1
+        latest_id = 0
         segment_id = np.zeros(self.n_gps_entries)
         for i in range(self.n_gps_entries):
             if is_segment[i]:
-                segment_id[i] = latest_id
-            else:
-                if is_segment[i+1]:
+                if i==0 or not is_segment[i-1]:
                     latest_id += 1
+                segment_id[i] = latest_id
         return segment_id
 
     def read_gpx(self):

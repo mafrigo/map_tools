@@ -43,7 +43,7 @@ def get_frame_extent(route, fixed_shape=True, fixed_size=0., center_on="frame"):
     return extent
 
 
-def plot_route_on_map(route, extent=None, osm_request=None, output_file='map'):
+def plot_route_on_map(route, extent=None, osm_request=None, output_file='map', color_segments=False):
     if isinstance(route, SubRoute):  # movie
         full_route = route.full_route
         add_trail_flag = True
@@ -73,7 +73,12 @@ def plot_route_on_map(route, extent=None, osm_request=None, output_file='map'):
     ax.add_image(osm_request, get_zoom_level(deg_size))
 
     # Plot route
-    plt.plot(route.longitude, route.latitude, color=cfg["route_color"], transform=ccrs.PlateCarree(), lw=1)
+    if color_segments:
+        color_list = ["crimson", "g", "b"]
+        route_colors = list(np.array(color_list)[route.route_segment_id.astype(int) % len(color_list)])
+        plt.scatter(route.longitude, route.latitude, color=route_colors, transform=ccrs.PlateCarree(), lw=1, s=1, marker='.')
+    else:
+        plt.plot(route.longitude, route.latitude, color=cfg["route_color"], transform=ccrs.PlateCarree(), lw=1)
 
     # Plot data
     if show_length:
