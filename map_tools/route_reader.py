@@ -3,7 +3,26 @@ from datetime import datetime
 
 
 class Route:
-    def __init__(self, file):
+    file = ""
+    latitude = np.array([])
+    longitude = np.array([])
+    altitude = np.array([])
+    time = np.array([])
+    n_gps_entries = 0
+    _length_segments = np.array([])
+    length = np.array([])
+    _time_intervals = np.array([])
+    speed = np.array([])
+    avg_speed = np.array([])
+    elevation_gain = np.array([])
+    max_index = 0
+    route_segment_id = np.array([])
+
+    def __init__(self, file=None):
+        if file is not None:
+            self.route_from_file(file)
+
+    def route_from_file(self, file):
         self.file = file
         if file.endswith(".gpx"):
             route_array = self.read_gpx()
@@ -22,6 +41,15 @@ class Route:
         self.elevation_gain = self.get_elevation_gain()
         self.max_index = len(self.latitude)
         self.route_segment_id = self.get_route_segments()
+
+    def __add__(self, other):
+        new_route = Route()
+        for attr in ["latitude", "longitude", "altitude", "time", "_length_segments", "length",
+                     "_time_intervals", "speed", "avg_speed", "elevation_gain", "route_segment_id"]:
+            setattr(new_route, attr, np.concatenate((getattr(self, attr), getattr(other, attr))))
+        for attr in ["n_gps_entries", "max_index"]:
+            setattr(new_route, attr, getattr(self, attr) + getattr(other, attr))
+        return new_route
 
     def get_length_segments(self):
         lat_to_km = 110.574
