@@ -16,5 +16,4 @@ Produces map movies and plots from GPS routes (.gpx format). Maps come from Open
 - Run example.py.
 
 ## TODO:
-- join .gpx routes using +.
 - add tests?

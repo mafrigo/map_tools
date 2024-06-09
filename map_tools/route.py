@@ -17,10 +17,12 @@ class Route(object):
     elevation_gain = np.array([])
     max_index = 0
     route_segment_id = np.array([])
+    full_route = None
 
     def __init__(self, file: str = ""):
         if len(file) > 0:
             self.route_from_file(file)
+        self.full_route = self
 
     def route_from_file(self, file: str):
         self.file = file
