@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 from matplotlib.collections import LineCollection
 import cartopy.crs as ccrs
-import cartopy.io.img_tiles as cimgt
+import cartopy.io.img_tiles as img_tiles
 from .route_reader import SubRoute
 from .config import get_yaml_config
 
@@ -67,7 +67,7 @@ def plot_route_on_map(route, extent=None, osm_request=None, output_file='map', c
 
     # Plot background map
     if osm_request is None:
-        osm_request = cimgt.OSM()
+        osm_request = img_tiles.OSM(cache=True)
     ax = plt.axes(projection=osm_request.crs)
     ax.set_extent(extent)
     ax.add_image(osm_request, get_zoom_level(deg_size))
