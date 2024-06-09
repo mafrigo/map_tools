@@ -2,7 +2,7 @@ import numpy as np
 from datetime import datetime
 
 
-class Route:
+class Route(object):
     file = ""
     latitude = np.array([])
     longitude = np.array([])
@@ -18,16 +18,16 @@ class Route:
     max_index = 0
     route_segment_id = np.array([])
 
-    def __init__(self, file=None):
-        if file is not None:
+    def __init__(self, file: str = ""):
+        if len(file) > 0:
             self.route_from_file(file)
 
-    def route_from_file(self, file):
+    def route_from_file(self, file: str):
         self.file = file
         if file.endswith(".gpx"):
             route_array = self.read_gpx()
         else:
-            print("Only .gpx files are currently supported")
+            raise IOError("Only .gpx files are currently supported")
         self.latitude = route_array[:, 0]
         self.longitude = route_array[:, 1]
         self.altitude = route_array[:, 2]
@@ -43,29 +43,24 @@ class Route:
         self.route_segment_id = self.get_route_segments()
 
     def __add__(self, other):
-        new_route = Route()
-        for attr in ["latitude", "longitude", "altitude", "time", "_length_segments", "length",
-                     "_time_intervals", "speed", "avg_speed", "elevation_gain", "route_segment_id"]:
-            setattr(new_route, attr, np.concatenate((getattr(self, attr), getattr(other, attr))))
-        for attr in ["n_gps_entries", "max_index"]:
-            setattr(new_route, attr, getattr(self, attr) + getattr(other, attr))
-        return new_route
+        return add_routes(self, other)
 
     def get_length_segments(self):
         lat_to_km = 110.574
-        lon_to_km = 111.320 * np.cos(self.latitude[1:]*np.pi/180.)
+        lon_to_km = 111.320 * np.cos(self.latitude[1:] * np.pi / 180.)
         length_array = np.zeros(self.n_gps_entries)
         length_array[1:] = np.sqrt(
-            (lat_to_km*(self.latitude[1:] - self.latitude[:-1])) ** 2 + (lon_to_km*(self.longitude[1:] - self.longitude[:-1])) ** 2)
-        return length_array #in km
+            (lat_to_km * (self.latitude[1:] - self.latitude[:-1])) ** 2 + (
+                    lon_to_km * (self.longitude[1:] - self.longitude[:-1])) ** 2)
+        return length_array  # in km
 
     def get_elevation_gain(self):
         elev_array = np.zeros(self.n_gps_entries)
         elev_array[1:] = self.altitude[1:] - self.altitude[:-1]
-        return np.cumsum(np.clip(elev_array, 0., None)) #in m
+        return np.cumsum(np.clip(elev_array, 0., None))  # in m
 
     def get_length(self):
-        return np.cumsum(self._length_segments) #in km
+        return np.cumsum(self._length_segments)  # in km
 
     def get_time_intervals(self):
         time_array = np.zeros(self.n_gps_entries)
@@ -73,19 +68,19 @@ class Route:
         return time_array
 
     def get_avg_speed(self):
-        return np.nan_to_num(self.length/(self.time/3600.)) #in km/h
+        return np.nan_to_num(self.length / (self.time / 3600.))  # in km/h
 
     def get_speed(self):
-        return np.nan_to_num(self._length_segments/(self._time_intervals/3600.)) #in km/h
+        return np.nan_to_num(self._length_segments / (self._time_intervals / 3600.))  # in km/h
 
-    def get_route_segments(self, minimum_speed_for_segment=10.):
+    def get_route_segments(self, minimum_speed_for_segment: float = 10.):
         is_segment = np.zeros(self.n_gps_entries)
         is_segment[self.speed > minimum_speed_for_segment] = 1
         latest_id = 0
         segment_id = np.zeros(self.n_gps_entries)
         for i in range(self.n_gps_entries):
             if is_segment[i]:
-                if i==0 or not is_segment[i-1]:
+                if i == 0 or not is_segment[i - 1]:
                     latest_id += 1
                 segment_id[i] = latest_id
         return segment_id
@@ -116,12 +111,22 @@ class Route:
                     continue
         return route_array
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: slice):
         return SubRoute(self, key)
 
 
+def add_routes(route1: Route, route2: Route) -> Route:
+    new_route = Route()
+    for attr in ["latitude", "longitude", "altitude", "time", "_length_segments", "length",
+                 "_time_intervals", "speed", "avg_speed", "elevation_gain", "route_segment_id"]:
+        setattr(new_route, attr, np.concatenate((getattr(route1, attr), getattr(route2, attr))))
+    for attr in ["n_gps_entries", "max_index"]:
+        setattr(new_route, attr, getattr(route1, attr) + getattr(route2, attr))
+    return new_route
+
+
 class SubRoute:
-    def __init__(self, route, route_slice):
+    def __init__(self, route, route_slice: slice):
         self.file = route.file
         self.latitude = route.latitude[route_slice]
         self.longitude = route.longitude[route_slice]
@@ -132,9 +137,11 @@ class SubRoute:
         self.elevation_gain = route.elevation_gain[route_slice]
         if isinstance(route, Route):
             self.full_route = route
-        if isinstance(route, SubRoute):
+        elif isinstance(route, SubRoute):
             self.full_route = route.full_route
+        else:
+            raise IOError("route must be either a Route or a Subroute object")
         self.max_index = len(self.latitude)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: slice):
         return SubRoute(self, key)

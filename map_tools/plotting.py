@@ -4,17 +4,19 @@ from matplotlib import colors
 from matplotlib.collections import LineCollection
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as img_tiles
-from .route_reader import SubRoute
+from .route import Route, SubRoute
 from .config import get_yaml_config
+from typing import List
 
 cfg = get_yaml_config()
 
 
-def get_zoom_level(delta):
+def get_zoom_level(delta: int):
     return int(np.clip(np.round(np.log2((cfg["osm_extra_zoom"] + 1.) * 360. / delta)), 0, 20))
 
 
-def get_frame_extent(route, fixed_shape=True, fixed_size=0., center_on="frame"):
+def get_frame_extent(route: Route | SubRoute, fixed_shape: bool = True, fixed_size: float = 0.,
+                     center_on: str = "frame"):
     if fixed_size == 0.:
         lat_route_diff = abs(np.max(route.latitude) - np.min(route.latitude))
         lon_route_diff = abs(np.max(route.longitude) - np.min(route.longitude))
@@ -43,7 +45,8 @@ def get_frame_extent(route, fixed_shape=True, fixed_size=0., center_on="frame"):
     return extent
 
 
-def plot_route_on_map(route, extent=None, osm_request=None, output_file='map', color_segments=False):
+def plot_route_on_map(route: Route | SubRoute, extent: List[int] = None, osm_request: img_tiles.OSM = None,
+                      output_file: str = 'map', color_segments: bool = False):
     if isinstance(route, SubRoute):  # movie
         full_route = route.full_route
         add_trail_flag = True
@@ -113,7 +116,7 @@ def plot_route_on_map(route, extent=None, osm_request=None, output_file='map', c
         plt.savefig("output/" + output_file)
 
 
-def add_trail(ax, route):
+def add_trail(ax: plt.Axes, route: Route | SubRoute):
     if isinstance(route, SubRoute):
         route_length = route.full_route.max_index
     else:

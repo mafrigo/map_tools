@@ -8,7 +8,7 @@ from .config import get_yaml_config
 cfg = get_yaml_config()
 
 
-def init_movie(output_file):
+def init_movie(output_file: str):
     plt.rcParams['animation.ffmpeg_path'] = cfg["ffmpeg_path"]
     plt.rcParams['savefig.bbox'] = "tight"
     metadata = dict(title=output_file, artist='Matplotlib')
@@ -19,7 +19,7 @@ def init_movie(output_file):
     return fig, writer, osm
 
 
-def make_movie_with_static_map(route, output_file="movie", frame_step=1, cut_at_frame=None):
+def make_movie_with_static_map(route, output_file: str = "movie", frame_step: int = 1, cut_at_frame: int = None):
     fig, writer, osm_request = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
@@ -38,8 +38,8 @@ def make_movie_with_static_map(route, output_file="movie", frame_step=1, cut_at_
     writer.finish()
 
 
-def make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, output_file="movie", frame_step=1, cut_at_frame=None,
-                                final_zoomout=True):
+def make_movie_with_dynamic_map(route, map_frame_size_in_deg: float = 0.1, output_file: str = "movie",
+                                frame_step: int = 1, cut_at_frame: int = None, final_zoomout: bool = True):
     fig, writer, osm_request = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
@@ -81,7 +81,7 @@ def make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, output_file="m
                 update_progress_bar(progress_counter, cfg["zoomout_nframes"] + cfg["still_final_nframes"])
 
 
-def update_progress_bar(progress_counter, nframes, frame_step=1):
+def update_progress_bar(progress_counter: int, nframes: int, frame_step: int = 1):
     progress = 100 * progress_counter / nframes
     sys.stdout.write('\r')
     sys.stdout.write(
