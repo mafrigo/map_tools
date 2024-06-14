@@ -116,6 +116,9 @@ class Route(object):
     def __getitem__(self, key: slice):
         return SubRoute(self, key)
 
+    def __len__(self):
+        return len(self.latitude)
+
 
 def add_routes(route1: Route, route2: Route) -> Route:
     new_route = Route()
