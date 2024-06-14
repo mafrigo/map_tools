@@ -5,4 +5,5 @@ zoomout_nframes: 180
 still_final_nframes: 60
 zoomout_fac: 0.2
 osm_extra_zoom: 1.2
-route_color: r
+default_route_color: r
+text_color: black

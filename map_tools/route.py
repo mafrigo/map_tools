@@ -1,5 +1,7 @@
 import numpy as np
 from datetime import datetime
+from .config import get_yaml_config
+cfg = get_yaml_config()
 
 
 class Route(object):
@@ -18,6 +20,8 @@ class Route(object):
     max_index = 0
     route_segment_id = np.array([])
     full_route = None
+    color = cfg["default_route_color"]
+    display_name = ''
 
     def __init__(self, file: str = ""):
         if len(file) > 0:
@@ -119,6 +123,12 @@ class Route(object):
     def __len__(self):
         return len(self.latitude)
 
+    def set_color(self, color: str):
+        self.color = color
+
+    def set_display_name(self, display_name: str):
+        self.display_name = display_name
+
 
 def add_routes(route1: Route, route2: Route) -> Route:
     new_route = Route()
@@ -147,6 +157,8 @@ class SubRoute:
         else:
             raise IOError("route must be either a Route or a Subroute object")
         self.max_index = len(self.latitude)
+        self.color = route.color
+        self.display_name = route.display_name
 
     def __getitem__(self, key: slice):
         return SubRoute(self, key)

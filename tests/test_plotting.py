@@ -25,6 +25,5 @@ class TestMapPlot(unittest.TestCase):
         self.assertEqual(isinstance(trail, LineCollection), True)
 
 
-
 if __name__ == '__main__':
     unittest.main()
