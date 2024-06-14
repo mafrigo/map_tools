@@ -67,7 +67,7 @@ def plot_name_icon(route):
 
 
 def get_zoom_level(delta: int) -> int:
-    return int(np.clip(np.round(np.log2((cfg["osm_extra_zoom"] + 1.) * 360. / delta)), 0, 20))
+    return int(np.clip(np.round(np.log2((cfg["osm_zoom_level_adjust"] + 1.) * 360. / delta)), 0, 20))
 
 
 def get_frame_extent(route: Route | SubRoute, fixed_shape: bool = True, fixed_size: float = 0.,
@@ -79,10 +79,10 @@ def get_frame_extent(route: Route | SubRoute, fixed_shape: bool = True, fixed_si
     else:
         deg_size = fixed_size
     if not fixed_shape:
-        extent = [np.min(route.longitude) - deg_size * cfg["zoomout_fac"],
-                  np.max(route.longitude) + deg_size * cfg["zoomout_fac"],
-                  np.min(route.latitude) - deg_size * cfg["zoomout_fac"],
-                  np.max(route.latitude) + deg_size * cfg["zoomout_fac"]]
+        extent = [np.min(route.longitude) - deg_size * cfg["map_extent_adjust"],
+                  np.max(route.longitude) + deg_size * cfg["map_extent_adjust"],
+                  np.min(route.latitude) - deg_size * cfg["map_extent_adjust"],
+                  np.max(route.latitude) + deg_size * cfg["map_extent_adjust"]]
     else:
         if center_on == "frame":
             center = [np.min(route.longitude) + 0.5 * (np.max(route.longitude) - np.min(route.longitude)),
@@ -93,15 +93,15 @@ def get_frame_extent(route: Route | SubRoute, fixed_shape: bool = True, fixed_si
             center = [np.mean(route.longitude[-5:-1]), np.mean(route.latitude[-5:-1])]
         else:
             raise IOError("Centering mode can only be last, frame, or last_smooth")
-        extent = [center[0] - 0.5 * deg_size * (1. + cfg["zoomout_fac"]),
-                  center[0] + 0.5 * deg_size * (1. + cfg["zoomout_fac"]),
-                  center[1] - 0.25 * deg_size * (1. + cfg["zoomout_fac"]),
-                  center[1] + 0.25 * deg_size * (1. + cfg["zoomout_fac"])]
+        extent = [center[0] - 0.5 * deg_size * (1. + cfg["map_extent_adjust"]),
+                  center[0] + 0.5 * deg_size * (1. + cfg["map_extent_adjust"]),
+                  center[1] - 0.25 * deg_size * (1. + cfg["map_extent_adjust"]),
+                  center[1] + 0.25 * deg_size * (1. + cfg["map_extent_adjust"])]
     return extent
 
 
 def create_background_map(extent: List[float], osm_request: img_tiles.OSM = None) -> plt.Axes:
-    deg_size = (extent[1] - extent[0]) / (1. + cfg["zoomout_fac"])
+    deg_size = (extent[1] - extent[0]) / (1. + cfg["map_extent_adjust"])
     if osm_request is None:
         osm_request = img_tiles.OSM(cache=True)
     ax = plt.axes(projection=osm_request.crs)

@@ -1,9 +1,11 @@
 import sys
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as mani
 import cartopy.io.img_tiles as cimgt
 from .plotting import plot, get_frame_extent
 from .config import get_yaml_config
+from .route import Route, SubRoute
 
 cfg = get_yaml_config()
 
@@ -19,10 +21,12 @@ def init_movie(output_file: str):
     return fig, writer, osm
 
 
-def make_movie_with_static_map(route, output_file: str = "movie", frame_step: int = 1, cut_at_frame: int = None):
+def make_movie_with_static_map(route: Route | SubRoute, output_file: str = "movie", frame_step: int = 1, cut_at_frame: int = None):
     fig, writer, osm_request = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
+    frame_step = get_frame_step_from_real_time(route)
+    print("Using frame step: " + str(frame_step))
     with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
@@ -38,11 +42,12 @@ def make_movie_with_static_map(route, output_file: str = "movie", frame_step: in
     writer.finish()
 
 
-def make_movie_with_dynamic_map(route, map_frame_size_in_deg: float = 0.1, output_file: str = "movie",
+def make_movie_with_dynamic_map(route: Route | SubRoute, map_frame_size_in_deg: float = 0.1, output_file: str = "movie",
                                 frame_step: int = 1, cut_at_frame: int = None, final_zoomout: bool = True):
     fig, writer, osm_request = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
+    frame_step = get_frame_step_from_real_time(route)
     with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
@@ -81,10 +86,14 @@ def make_movie_with_dynamic_map(route, map_frame_size_in_deg: float = 0.1, outpu
                 update_progress_bar(progress_counter, cfg["zoomout_nframes"] + cfg["still_final_nframes"])
 
 
+def get_frame_step_from_real_time(route: Route | SubRoute):
+    #note: this only works if the timestep is constant; an interpolation approach would be more general
+    real_time_step_in_seconds = np.mean(route.get_time_intervals())
+    return int(60. * cfg["real_minutes_per_video_second"] / (cfg["frames_per_second"] * real_time_step_in_seconds))
+
+
 def update_progress_bar(progress_counter: int, nframes: int, frame_step: int = 1):
     progress = 100 * progress_counter / nframes
     sys.stdout.write('\r')
-    sys.stdout.write(
-        "[{:{}}] {:.1f}%".format("=" * int(frame_step * progress / (100 / cfg["progress_bar_length"])),
-                                 cfg["progress_bar_length"], frame_step * progress))
+    sys.stdout.write("[{:{}}] {:.1f}%".format("=" * int(frame_step * progress / 2.), 50, frame_step * progress))
     sys.stdout.flush()
