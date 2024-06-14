@@ -23,10 +23,10 @@ plot(route + route2, output_file="map_joined", color_segments=True)
 multi_plot([route, route2], output_file="multiple_routes")
 
 # Make a movie of the route on a static map - commented out because it takes a long time
-#make_movie_with_static_map(route3, frame_step=10, output_file="static_movie")
+#make_movie_with_static_map(route3, output_file="static_movie")
 
 # Make a movie of the route on a zoomed-in moving map, with optional zoom-out at the end - commented out because it takes a long time
-#make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, frame_step=30, output_file="dynamic_movie", final_zoomout=False)
+#make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, output_file="dynamic_movie", final_zoomout=False)
 
 t1 = time.time()
 print("\nFinished in %.1f seconds" % (t1 - t0))

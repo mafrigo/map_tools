@@ -21,7 +21,7 @@ def init_movie(output_file: str):
     return fig, writer, osm
 
 
-def make_movie_with_static_map(route: Route | SubRoute, output_file: str = "movie", frame_step: int = 1, cut_at_frame: int = None):
+def make_movie_with_static_map(route: Route | SubRoute, output_file: str = "movie", cut_at_frame: int = None):
     fig, writer, osm_request = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
@@ -43,7 +43,7 @@ def make_movie_with_static_map(route: Route | SubRoute, output_file: str = "movi
 
 
 def make_movie_with_dynamic_map(route: Route | SubRoute, map_frame_size_in_deg: float = 0.1, output_file: str = "movie",
-                                frame_step: int = 1, cut_at_frame: int = None, final_zoomout: bool = True):
+                                cut_at_frame: int = None, final_zoomout: bool = True):
     fig, writer, osm_request = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
