@@ -26,7 +26,7 @@ def make_movie_with_static_map(route, output_file: str = "movie", frame_step: in
     with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
-            plot(subroute, osm_request=osm_request, output_file=None, extent=None)
+            plot(subroute, osm_request=osm_request, output_file="", extent=None, add_trail=True)
             writer.grab_frame()
             plt.clf()
             del subroute
@@ -50,7 +50,7 @@ def make_movie_with_dynamic_map(route, map_frame_size_in_deg: float = 0.1, outpu
                 extent = get_frame_extent(subroute, fixed_size=map_frame_size_in_deg, center_on="last_smooth")
             else:
                 extent = get_frame_extent(subroute, fixed_size=map_frame_size_in_deg, center_on="last")
-            plot(subroute, osm_request=osm_request, output_file=None, extent=extent)
+            plot(subroute, osm_request=osm_request, output_file="", extent=extent, add_trail=True)
             writer.grab_frame()
             plt.clf()
             del subroute
@@ -68,13 +68,13 @@ def make_movie_with_dynamic_map(route, map_frame_size_in_deg: float = 0.1, outpu
                 current_extent = [
                     initial_extent[j] + (float(i) / cfg["zoomout_nframes"]) * (final_extent[j] - initial_extent[j]) for
                     j in range(len(initial_extent))]
-                plot(route, osm_request=osm_request, output_file=None, extent=current_extent)
+                plot(route, osm_request=osm_request, output_file="", extent=current_extent, add_trail=False)
                 writer.grab_frame()
                 plt.clf()
                 progress_counter += 1
                 update_progress_bar(progress_counter, cfg["zoomout_nframes"] + cfg["still_final_nframes"])
             for i in range(cfg["still_final_nframes"]):
-                plot(route, osm_request=osm_request, output_file=None, extent=final_extent)
+                plot(route, osm_request=osm_request, output_file="", extent=final_extent, add_trail=False)
                 writer.grab_frame()
                 plt.clf()
                 progress_counter += 1

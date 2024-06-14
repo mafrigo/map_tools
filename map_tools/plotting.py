@@ -12,7 +12,7 @@ cfg = get_yaml_config()
 
 
 def plot(route: Route | SubRoute, extent: List[float] = None, osm_request: img_tiles.OSM = None,
-         output_file: str = 'map', color_segments: bool = False):
+         output_file: str = 'map', color_segments: bool = False, add_trail=False):
     if extent is None:
         extent = get_frame_extent(route.full_route)
     else:
@@ -23,13 +23,14 @@ def plot(route: Route | SubRoute, extent: List[float] = None, osm_request: img_t
 
     plot_route_on_map(route, color_segments)
 
-    if isinstance(route, SubRoute):  # used in movies, so show current stats instead of total ones and add trail
+    if isinstance(route, SubRoute):  # used in movies, so show current stats instead of total ones
         add_data(route, extent, True, True, False)
-        ax.add_collection(get_trail(route))
         if route.display_name is not None and route.display_name != "":
             plot_name_icon(route)
     else:
         add_data(route, extent, True, False, True)
+    if add_trail:
+        ax.add_collection(get_trail(route))
 
     plt.axis('off')
     plt.tight_layout()
@@ -37,18 +38,19 @@ def plot(route: Route | SubRoute, extent: List[float] = None, osm_request: img_t
         plt.savefig("output/" + output_file)
 
 
-def multi_plot(routes: List[Route], output_file: str = "multi_map"):
-    extent = [1000., -1000., 1000., -1000.]
-    for route in routes:
-        current_extent = get_frame_extent(route)
-        if current_extent[0] < extent[0]:
-            extent[0] = current_extent[0]
-        if current_extent[2] < extent[2]:
-            extent[2] = current_extent[2]
-        if current_extent[1] > extent[1]:
-            extent[1] = current_extent[1]
-        if current_extent[3] > extent[3]:
-            extent[3] = current_extent[3]
+def multi_plot(routes: List[Route], extent: List[float] = None, output_file: str = "multi_map"):
+    if extent is None:
+        extent = [1000., -1000., 1000., -1000.]
+        for route in routes:
+            current_extent = get_frame_extent(route)
+            if current_extent[0] < extent[0]:
+                extent[0] = current_extent[0]
+            if current_extent[2] < extent[2]:
+                extent[2] = current_extent[2]
+            if current_extent[1] > extent[1]:
+                extent[1] = current_extent[1]
+            if current_extent[3] > extent[3]:
+                extent[3] = current_extent[3]
     ax = create_background_map(extent, None)
     for route in routes:
         plot_route_on_map(route, False)
