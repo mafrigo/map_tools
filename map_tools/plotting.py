@@ -11,9 +11,8 @@ from typing import List
 cfg = get_yaml_config()
 
 
-def plot(route: Route | SubRoute, extent: List[int] = None, osm_request: img_tiles.OSM = None,
-                      output_file: str = 'map', color_segments: bool = False):
-
+def plot(route: Route | SubRoute, extent: List[float] = None, osm_request: img_tiles.OSM = None,
+         output_file: str = 'map', color_segments: bool = False):
     if extent is None:
         extent = get_frame_extent(route.full_route)
     else:
@@ -34,8 +33,28 @@ def plot(route: Route | SubRoute, extent: List[int] = None, osm_request: img_til
 
     plt.axis('off')
     plt.tight_layout()
-    if output_file is not None:
+    if output_file != "":
         plt.savefig("output/" + output_file)
+
+
+def multi_plot(routes: List[Route], output_file: str = "multi_map"):
+    extent = [1000., -1000., 1000., -1000.]
+    for route in routes:
+        current_extent = get_frame_extent(route)
+        if current_extent[0] < extent[0]:
+            extent[0] = current_extent[0]
+        if current_extent[2] < extent[2]:
+            extent[2] = current_extent[2]
+        if current_extent[1] > extent[1]:
+            extent[1] = current_extent[1]
+        if current_extent[3] > extent[3]:
+            extent[3] = current_extent[3]
+    ax = create_background_map(extent, None)
+    for route in routes:
+        plot_route_on_map(route, False)
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig("output/" + output_file)
 
 
 def plot_name_icon(route):
@@ -93,12 +112,14 @@ def plot_route_on_map(route: Route | SubRoute, color_segments: bool = False):
     if color_segments:
         color_list = ["crimson", "g", "b"]
         route_colors = list(np.array(color_list)[route.route_segment_id.astype(int) % len(color_list)])
-        plt.scatter(route.longitude, route.latitude, color=route_colors, transform=ccrs.PlateCarree(), lw=1, s=1, marker='.')
+        plt.scatter(route.longitude, route.latitude, color=route_colors, transform=ccrs.PlateCarree(), lw=1, s=1,
+                    marker='.')
     else:
         plt.plot(route.longitude, route.latitude, color=route.color, transform=ccrs.PlateCarree(), lw=1)
 
 
-def add_data(route: Route | SubRoute, extent: List[int], show_length: bool, show_current_stats: bool, show_total_stats: bool):
+def add_data(route: Route | SubRoute, extent: List[float], show_length: bool, show_current_stats: bool,
+             show_total_stats: bool):
     total_length = route.length[-1]
     if show_length:
         plt.text(extent[0] + 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
