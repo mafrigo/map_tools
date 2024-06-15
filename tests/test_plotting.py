@@ -17,7 +17,7 @@ class TestMapPlot(unittest.TestCase):
         self.assertGreater(frame_extent[3], np.max(route.latitude))
 
     def test_background_map(self):
-        ax = create_background_map([11.6, 12.0, 48.2, 48.4], 1)
+        ax = create_background_map([11.6, 12.0, 48.2, 48.4])
         self.assertEqual(isinstance(ax, plt.Axes), True)
 
     #def test_trail(self):
