@@ -134,9 +134,12 @@ class Route(object):
 
 def add_routes(route1: Route, route2: Route) -> Route:
     new_route = Route()
-    for attr in ["latitude", "longitude", "altitude", "time", "length_segments", "length",
-                 "time_intervals", "speed", "avg_speed", "elevation_gain", "route_segment_id"]:
+    for attr in ["latitude", "longitude", "altitude", "length_segments",
+                 "time_intervals", "speed", "avg_speed", "route_segment_id"]:
         setattr(new_route, attr, np.concatenate((getattr(route1, attr), getattr(route2, attr))))
+    for attr in ["time", "length", "elevation_gain"]:
+        setattr(new_route, attr, np.concatenate((getattr(route1, attr),
+                                                 getattr(route1, attr)[-1] + getattr(route2, attr))))
     for attr in ["n_gps_entries", "max_index"]:
         setattr(new_route, attr, getattr(route1, attr) + getattr(route2, attr))
     return new_route
