@@ -14,7 +14,6 @@ class TestRouteOperations(unittest.TestCase):
         self.assertEqual(len(route + route2), len(route)+len(route2))
 
     def test_subroute(self):
-        self.assertEqual(isinstance(route[0:10], SubRoute), True)
         self.assertEqual(route[0:10].full_route, route)
 
 

@@ -2,14 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as img_tiles
-from .route import Route, SubRoute
+from .route import Route
 from .config import get_yaml_config
 from typing import List
 
 cfg = get_yaml_config()
 
 
-def plot_single_route(route: Route | SubRoute, extent: List[float] = None, color_segments: bool = False, 
+def plot_single_route(route: Route, extent: List[float] = None, color_segments: bool = False,
                       output_file: str = 'map'):
     if extent is None:
         extent = get_frame_extent(route.full_route)
@@ -60,7 +60,7 @@ def get_zoom_level(delta: int) -> int:
     return int(np.clip(np.round(np.log2((cfg["osm_zoom_level_adjust"] + 1.) * 360. / delta)), 0, 20))
 
 
-def get_frame_extent(route: Route | SubRoute, fixed_shape: bool = True, fixed_size: float = 0.,
+def get_frame_extent(route: Route, fixed_shape: bool = True, fixed_size: float = 0.,
                      center_on: str = "frame") -> List[float]:
     if fixed_size == 0.:
         lat_route_diff = abs(np.max(route.latitude) - np.min(route.latitude))
@@ -99,7 +99,7 @@ def create_background_map(extent: List[float]) -> plt.Axes:
     return ax
 
 
-def plot_route_on_map(route: Route | SubRoute, color_segments: bool = False):
+def plot_route_on_map(route: Route, color_segments: bool = False):
     if color_segments:
         color_list = ["crimson", "g", "b"]
         route_colors = list(np.array(color_list)[route.route_segment_id.astype(int) % len(color_list)])

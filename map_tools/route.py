@@ -123,7 +123,22 @@ class Route(object):
         return route_array
 
     def __getitem__(self, key: slice):
-        return SubRoute(self, key)
+        new_route = Route()
+        new_route.file = self.file
+        new_route.latitude = self.latitude[key]
+        new_route.longitude = self.longitude[key]
+        new_route.altitude = self.altitude[key]
+        new_route.time = self.time[key]
+        new_route.length = self.length[key]
+        new_route.speed = self.speed[key]
+        new_route.elevation_gain = self.elevation_gain[key]
+        new_route.full_route = self.full_route
+        new_route.max_index = len(new_route.latitude)
+        new_route.avg_timestep = self.avg_timestep
+        new_route.color = self.color
+        new_route.display_name = self.display_name
+        new_route.frame_step = self.frame_step
+        return new_route
 
     def __len__(self):
         return len(self.latitude)
@@ -146,29 +161,3 @@ def add_routes(route1: Route, route2: Route) -> Route:
     for attr in ["n_gps_entries", "max_index"]:
         setattr(new_route, attr, getattr(route1, attr) + getattr(route2, attr))
     return new_route
-
-
-class SubRoute:
-    def __init__(self, route, route_slice: slice):
-        self.file = route.file
-        self.latitude = route.latitude[route_slice]
-        self.longitude = route.longitude[route_slice]
-        self.altitude = route.altitude[route_slice]
-        self.time = route.time[route_slice]
-        self.length = route.length[route_slice]
-        self.speed = route.speed[route_slice]
-        self.elevation_gain = route.elevation_gain[route_slice]
-        if isinstance(route, Route):
-            self.full_route = route
-        elif isinstance(route, SubRoute):
-            self.full_route = route.full_route
-        else:
-            raise IOError("route must be either a Route or a Subroute object")
-        self.max_index = len(self.latitude)
-        self.avg_timestep = route.avg_timestep
-        self.color = route.color
-        self.display_name = route.display_name
-        self.frame_step = route.frame_step
-
-    def __getitem__(self, key: slice):
-        return SubRoute(self, key)

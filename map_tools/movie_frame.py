@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 from matplotlib.collections import LineCollection
 import cartopy.crs as ccrs
-from .route import Route, SubRoute
+from .route import Route
 from .config import get_yaml_config
 from .plotting import get_frame_extent, create_background_map, plot_route_on_map, add_data_to_bottom
 from typing import List
@@ -11,7 +11,7 @@ from typing import List
 cfg = get_yaml_config()
 
 
-def plot_frame(route: Route | SubRoute, extent: List[float] = None, plot_background_map: bool = True,
+def plot_frame(route: Route, extent: List[float] = None, plot_background_map: bool = True,
                add_data: bool = True):
     if extent is None:
         extent = get_frame_extent(route.full_route)
@@ -39,7 +39,7 @@ def plot_name_icon(route):
              transform=ccrs.PlateCarree(), zorder=10, horizontalalignment='center', verticalalignment='center_baseline')
 
 
-def get_dynamic_frame_extent_for_multiple_routes(subroutes: List[Route] | List[SubRoute],
+def get_dynamic_frame_extent_for_multiple_routes(subroutes: List[Route],
                                                  min_size_in_deg: float = 0.1) -> List[float]:
     mean_point_between_routes = [0., 0.]
     max_distance = min_size_in_deg
@@ -57,11 +57,8 @@ def get_dynamic_frame_extent_for_multiple_routes(subroutes: List[Route] | List[S
             mean_point_between_routes[1] + max_distance * (1. + cfg["map_extent_adjust"])]
 
 
-def get_trail(route: Route | SubRoute) -> LineCollection:
-    if isinstance(route, SubRoute):
-        route_length = route.full_route.max_index
-    else:
-        route_length = route.max_index
+def get_trail(route: Route) -> LineCollection:
+    route_length = route.max_index
     alpha = np.zeros(route_length)
     trail_length = int(0.05 * route_length)
     if route.max_index > trail_length:

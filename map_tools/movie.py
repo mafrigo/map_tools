@@ -5,7 +5,7 @@ import matplotlib.animation as mani
 from .plotting import get_frame_extent, create_background_map
 from .movie_frame import plot_frame, get_dynamic_frame_extent_for_multiple_routes
 from .config import get_yaml_config
-from .route import Route, SubRoute
+from .route import Route
 
 cfg = get_yaml_config()
 
@@ -120,7 +120,7 @@ def make_movie_with_multiple_routes(routes: List[Route], min_map_frame_size_in_d
                     break
 
 
-def get_frame_step_from_real_time(route: Route | SubRoute) -> int:
+def get_frame_step_from_real_time(route: Route) -> int:
     # note: this only works if the timestep is constant; an interpolation approach would be more general
     return int(cfg["real_seconds_per_video_second"] / (cfg["frames_per_second"] * route.avg_timestep))
 
