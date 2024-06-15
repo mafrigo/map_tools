@@ -9,12 +9,13 @@ route2 = Route("route_files/Bad_Toelz.gpx", color='blue', display_name='2')
 route3 = Route("route_files/Munich_Prague.gpx", color='darkgreen', display_name='3')
 route4 = Route("route_files/Munich_Budapest.gpx", color='k', display_name='4')
 route5 = Route("route_files/Garching_Seefeld.gpx", color='red', display_name='5')
-route6 = Route("route_files/Morning_Ride.gpx", color='darkorange', display_name='6')
+route6 = Route("route_files/Morning_Ride.gpx", color='crimson', display_name='6')
+route7 = Route("route_files/Ronde_van_Noord_Holland.gpx", color='red', display_name='7')
 
 # Plot whole route on a map
-plot_single_route(route, output_file="map")
+plot_single_route(route7, output_file="map")
 
-# Join two maps and plot them separating segments with different colours
+# Join two maps and plot them separating continuous ride segments with different colours
 plot_single_route(route + route2, output_file="map_joined", color_segments=True)
 
 # Plot two routes together
