@@ -11,7 +11,8 @@ from typing import List
 cfg = get_yaml_config()
 
 
-def plot_frame(route: Route | SubRoute, extent: List[float] = None, plot_background_map=True):
+def plot_frame(route: Route | SubRoute, extent: List[float] = None, plot_background_map: bool = True,
+               add_data: bool = True):
     if extent is None:
         extent = get_frame_extent(route.full_route)
     if plot_background_map:
@@ -21,10 +22,11 @@ def plot_frame(route: Route | SubRoute, extent: List[float] = None, plot_backgro
         plot_name_icon(route)
     if cfg["add_trail_to_movies"]:
         background_map.add_collection(get_trail(route))
-    add_data_to_bottom(extent,
-                       "Total length: %3i km" % route.length[-1],
-                       "Elevation: %4i m" % (route.altitude[-1]),
-                       "Current speed: %2i km/h" % (np.nan_to_num(route.speed[-1])))
+    if add_data:
+        add_data_to_bottom(extent,
+                           "Total length: %3i km" % route.length[-1],
+                           "Elevation: %4i m" % (route.altitude[-1]),
+                           "Current speed: %2i km/h" % (np.nan_to_num(route.speed[-1])))
     plt.axis('off')
     plt.tight_layout()
 
@@ -46,7 +48,7 @@ def get_dynamic_frame_extent_for_multiple_routes(subroutes: List[Route] | List[S
         mean_point_between_routes[1] += subroute.latitude[-1] / len(subroutes)
     for subroute in subroutes:
         distance_to_mean_point = np.sqrt((mean_point_between_routes[0] - subroute.longitude[-1]) ** 2 + (
-                    mean_point_between_routes[1] - subroute.latitude[-1]) ** 2)
+                mean_point_between_routes[1] - subroute.latitude[-1]) ** 2)
         if distance_to_mean_point > max_distance:
             max_distance = distance_to_mean_point
     return [mean_point_between_routes[0] - 2 * max_distance * (1. + cfg["map_extent_adjust"]),

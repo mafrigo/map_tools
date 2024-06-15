@@ -1,5 +1,5 @@
 ffmpeg_path: 'C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe'
-frames_per_second: 1
+frames_per_second: 30
 real_seconds_per_video_second: 600
 zoomout_nframes: 180
 still_final_nframes: 60

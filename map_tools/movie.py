@@ -86,7 +86,7 @@ def make_movie_with_dynamic_map(route: Route, map_frame_size_in_deg: float = 0.1
                 update_progress_bar(progress_counter, cfg["zoomout_nframes"] + cfg["still_final_nframes"])
 
 
-def make_movie_with_multiple_routes(routes: List[Route], min_map_frame_size_in_deg: float = 0.1,
+def make_movie_with_multiple_routes(routes: List[Route], min_map_frame_size_in_deg: float = 0.06,
                                     frame_style: str = 'dynamic', output_file: str = "race_movie",
                                     cut_at_frame: int = None):
     fig, writer = init_movie(output_file)
@@ -109,7 +109,7 @@ def make_movie_with_multiple_routes(routes: List[Route], min_map_frame_size_in_d
                 extent = get_dynamic_frame_extent_for_multiple_routes(subroutes, min_size_in_deg=min_map_frame_size_in_deg)
             create_background_map(extent)
             for subroute in subroutes:
-                plot_frame(subroute, extent=extent, plot_background_map=False)
+                plot_frame(subroute, extent=extent, plot_background_map=False, add_data=False)
                 del subroute
             writer.grab_frame()
             plt.clf()

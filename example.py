@@ -27,7 +27,7 @@ plot_multiple_routes([route, route2, route3, route4, route5], output_file="multi
 #make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, output_file="dynamic_movie", final_zoomout=False)
 
 # Make a movie of two routes together
-make_movie_with_multiple_routes([route, route2], frame_style='dynamic')
+make_movie_with_multiple_routes([route5, route2], frame_style='dynamic')
 
 t1 = time.time()
 print("\nFinished in %.1f seconds" % (t1 - t0))
