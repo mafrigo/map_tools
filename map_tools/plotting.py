@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import colors
-from matplotlib.collections import LineCollection
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as img_tiles
 from .route import Route, SubRoute
@@ -11,34 +9,24 @@ from typing import List
 cfg = get_yaml_config()
 
 
-def plot(route: Route | SubRoute, extent: List[float] = None, osm_request: img_tiles.OSM = None,
-         output_file: str = 'map', color_segments: bool = False, add_trail=False):
+def plot_single_route(route: Route | SubRoute, extent: List[float] = None, color_segments: bool = False, 
+                      output_file: str = 'map'):
     if extent is None:
         extent = get_frame_extent(route.full_route)
-    else:
-        route = route[np.logical_and(np.logical_and(route.longitude > extent[0], route.longitude < extent[1]),
-                                     np.logical_and(route.latitude > extent[2], route.latitude < extent[3]))]
-
-    ax = create_background_map(extent, osm_request)
-
+    create_background_map(extent)
     plot_route_on_map(route, color_segments)
-
-    if isinstance(route, SubRoute):  # used in movies, so show current stats instead of total ones
-        add_data(route, extent, True, True, False)
-        if route.display_name is not None and route.display_name != "":
-            plot_name_icon(route)
-    else:
-        add_data(route, extent, True, False, True)
-    if add_trail:
-        ax.add_collection(get_trail(route))
-
+    add_data_to_bottom(extent,
+                       "Total length: %3i km" % route.length[-1],
+                       "Total elevation: %4i m" % (route.full_route.elevation_gain[-1]),
+                       "Avg. speed: %2i km/h" % (np.mean(route.speed[route.speed > 10.])))
     plt.axis('off')
     plt.tight_layout()
     if output_file != "":
         plt.savefig("output/" + output_file)
+    plt.clf()
 
 
-def multi_plot(routes: List[Route], extent: List[float] = None, output_file: str = "multi_map"):
+def plot_multiple_routes(routes: List[Route], extent: List[float] = None, output_file: str = "multi_map"):
     if extent is None:
         extent = [1000., -1000., 1000., -1000.]
         for route in routes:
@@ -51,19 +39,21 @@ def multi_plot(routes: List[Route], extent: List[float] = None, output_file: str
                 extent[1] = current_extent[1]
             if current_extent[3] > extent[3]:
                 extent[3] = current_extent[3]
-    ax = create_background_map(extent, None)
+    create_background_map(extent)
+    total_length = 0
+    total_elevation = 0
     for route in routes:
         plot_route_on_map(route, False)
+        total_length += route.length[-1]
+        total_elevation += route.elevation_gain[-1]
+    add_data_to_bottom(extent,
+                       "Total length: %3i km" % total_length,
+                       "",
+                       "Total elevation: %4i m" % total_elevation)
     plt.axis('off')
     plt.tight_layout()
     plt.savefig("output/" + output_file)
-
-
-def plot_name_icon(route):
-    plt.scatter(route.longitude[-1], route.latitude[-1], 150, zorder=9,
-                transform=ccrs.PlateCarree(), facecolor='w', edgecolor=route.color)
-    plt.text(route.longitude[-1], route.latitude[-1], route.display_name, color=cfg["text_color"], fontsize='x-small',
-             transform=ccrs.PlateCarree(), zorder=10, horizontalalignment='center', verticalalignment='center_baseline')
+    plt.clf()
 
 
 def get_zoom_level(delta: int) -> int:
@@ -100,10 +90,9 @@ def get_frame_extent(route: Route | SubRoute, fixed_shape: bool = True, fixed_si
     return extent
 
 
-def create_background_map(extent: List[float], osm_request: img_tiles.OSM = None) -> plt.Axes:
+def create_background_map(extent: List[float]) -> plt.Axes:
     deg_size = (extent[1] - extent[0]) / (1. + cfg["map_extent_adjust"])
-    if osm_request is None:
-        osm_request = img_tiles.OSM(cache=True)
+    osm_request = img_tiles.OSM(cache=True)
     ax = plt.axes(projection=osm_request.crs)
     ax.set_extent(extent)
     ax.add_image(osm_request, get_zoom_level(deg_size))
@@ -120,48 +109,11 @@ def plot_route_on_map(route: Route | SubRoute, color_segments: bool = False):
         plt.plot(route.longitude, route.latitude, color=route.color, transform=ccrs.PlateCarree(), lw=1)
 
 
-def add_data(route: Route | SubRoute, extent: List[float], show_length: bool, show_current_stats: bool,
-             show_total_stats: bool):
-    total_length = route.length[-1]
-    if show_length:
-        plt.text(extent[0] + 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Total length: %3i km" % total_length, color=cfg["text_color"], transform=ccrs.PlateCarree(),
-                 horizontalalignment='left')
-    if show_current_stats:
-        plt.text(extent[0] + 0.5 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Elevation: %4i m" % (route.altitude[-1]), color=cfg["text_color"], transform=ccrs.PlateCarree(),
-                 horizontalalignment='center')
-        plt.text(extent[1] - 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Current speed: %2i km/h" % (np.nan_to_num(route.speed[-1])), color=cfg["text_color"],
-                 transform=ccrs.PlateCarree(),
-                 horizontalalignment='right')
-    if show_total_stats:
-        plt.text(extent[0] + 0.5 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Total elevation: %4i m" % (route.full_route.elevation_gain[-1]), color=cfg["text_color"],
-                 transform=ccrs.PlateCarree(),
-                 horizontalalignment='center')
-        moving_speed = route.speed[route.speed > 10.]
-        plt.text(extent[1] - 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
-                 "Avg. speed: %2i km/h" % (np.mean(moving_speed)), color=cfg["text_color"],
-                 transform=ccrs.PlateCarree(),
-                 horizontalalignment='right')
-
-
-def get_trail(route: Route | SubRoute) -> LineCollection:
-    if isinstance(route, SubRoute):
-        route_length = route.full_route.max_index
-    else:
-        route_length = route.max_index
-    alpha = np.zeros(route_length)
-    trail_length = int(0.05 * route_length)
-    if route.max_index > trail_length:
-        alpha[route.max_index - trail_length:route.max_index] = np.arange(trail_length).astype(float) / float(
-            trail_length)
-    else:
-        alpha[0:route.max_index] = np.arange(route.max_index).astype(float) / float(route.max_index)
-    colorfade = colors.to_rgb(route.color) + (0.0,)
-    cmap = colors.LinearSegmentedColormap.from_list('my', [colorfade, route.color])
-    points = np.vstack((route.longitude, route.latitude)).T.reshape(-1, 1, 2)
-    segments = np.hstack((points[:-1], points[1:]))
-    lc = LineCollection(segments, lw=3, zorder=8, transform=ccrs.PlateCarree(), array=alpha, cmap=cmap)
-    return lc
+def add_data_to_bottom(extent: List[float], data1: str, data2: str, data3: str):
+    plt.text(extent[0] + 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
+             data1, color=cfg["text_color"], transform=ccrs.PlateCarree(),
+             horizontalalignment='left')
+    plt.text(extent[0] + 0.5 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
+             data2, color=cfg["text_color"], transform=ccrs.PlateCarree(), horizontalalignment='center')
+    plt.text(extent[1] - 0.02 * (extent[1] - extent[0]), extent[2] - 0.05 * (extent[3] - extent[2]),
+             data3, color=cfg["text_color"], transform=ccrs.PlateCarree(), horizontalalignment='right')

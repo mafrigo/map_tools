@@ -20,9 +20,9 @@ class TestMapPlot(unittest.TestCase):
         ax = create_background_map([11.6, 12.0, 48.2, 48.4], 1)
         self.assertEqual(isinstance(ax, plt.Axes), True)
 
-    def test_trail(self):
-        trail = get_trail(route[0:20])
-        self.assertEqual(isinstance(trail, LineCollection), True)
+    #def test_trail(self):
+    #    trail = get_trail(route[0:20])
+    #    self.assertEqual(isinstance(trail, LineCollection), True)
 
 
 if __name__ == '__main__':

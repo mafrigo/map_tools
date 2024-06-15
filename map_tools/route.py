@@ -11,14 +11,15 @@ class Route(object):
     altitude = np.array([])
     time = np.array([])
     n_gps_entries = 0
-    _length_segments = np.array([])
+    length_segments = np.array([])
     length = np.array([])
-    _time_intervals = np.array([])
+    time_intervals = np.array([])
     speed = np.array([])
     avg_speed = np.array([])
     elevation_gain = np.array([])
     max_index = 0
     route_segment_id = np.array([])
+    avg_timestep = 1
     full_route = None
     color = cfg["default_route_color"]
     display_name = ''
@@ -39,14 +40,15 @@ class Route(object):
         self.altitude = route_array[:, 2]
         self.time = route_array[:, 3]
         self.n_gps_entries = len(self.latitude)
-        self._length_segments = self.get_length_segments()
+        self.length_segments = self.get_length_segments()
         self.length = self.get_length()
-        self._time_intervals = self.get_time_intervals()
+        self.time_intervals = self.get_time_intervals()
         self.speed = self.get_speed()
         self.avg_speed = self.get_avg_speed()
         self.elevation_gain = self.get_elevation_gain()
         self.max_index = len(self.latitude)
         self.route_segment_id = self.get_route_segments()
+        self.avg_timestep = np.mean(self.time_intervals)
 
     def __add__(self, other):
         return add_routes(self, other)
@@ -66,7 +68,7 @@ class Route(object):
         return np.cumsum(np.clip(elev_array, 0., None))  # in m
 
     def get_length(self):
-        return np.cumsum(self._length_segments)  # in km
+        return np.cumsum(self.length_segments)  # in km
 
     def get_time_intervals(self):
         time_array = np.zeros(self.n_gps_entries)
@@ -77,7 +79,7 @@ class Route(object):
         return np.nan_to_num(self.length / (self.time / 3600.))  # in km/h
 
     def get_speed(self):
-        return np.nan_to_num(self._length_segments / (self._time_intervals / 3600.))  # in km/h
+        return np.nan_to_num(self.length_segments / (self.time_intervals / 3600.))  # in km/h
 
     def get_route_segments(self, minimum_speed_for_segment: float = 10.):
         is_segment = np.zeros(self.n_gps_entries)
@@ -132,8 +134,8 @@ class Route(object):
 
 def add_routes(route1: Route, route2: Route) -> Route:
     new_route = Route()
-    for attr in ["latitude", "longitude", "altitude", "time", "_length_segments", "length",
-                 "_time_intervals", "speed", "avg_speed", "elevation_gain", "route_segment_id"]:
+    for attr in ["latitude", "longitude", "altitude", "time", "length_segments", "length",
+                 "time_intervals", "speed", "avg_speed", "elevation_gain", "route_segment_id"]:
         setattr(new_route, attr, np.concatenate((getattr(route1, attr), getattr(route2, attr))))
     for attr in ["n_gps_entries", "max_index"]:
         setattr(new_route, attr, getattr(route1, attr) + getattr(route2, attr))
@@ -157,6 +159,7 @@ class SubRoute:
         else:
             raise IOError("route must be either a Route or a Subroute object")
         self.max_index = len(self.latitude)
+        self.avg_timestep = route.avg_timestep
         self.color = route.color
         self.display_name = route.display_name
 
