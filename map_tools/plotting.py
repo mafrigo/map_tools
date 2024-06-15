@@ -28,17 +28,7 @@ def plot_single_route(route: Route, extent: List[float] = None, color_segments: 
 
 def plot_multiple_routes(routes: List[Route], extent: List[float] = None, output_file: str = "multi_map"):
     if extent is None:
-        extent = [1000., -1000., 1000., -1000.]
-        for route in routes:
-            current_extent = get_frame_extent(route)
-            if current_extent[0] < extent[0]:
-                extent[0] = current_extent[0]
-            if current_extent[2] < extent[2]:
-                extent[2] = current_extent[2]
-            if current_extent[1] > extent[1]:
-                extent[1] = current_extent[1]
-            if current_extent[3] > extent[3]:
-                extent[3] = current_extent[3]
+        get_frame_extent_multiple(routes)
     create_background_map(extent)
     total_length = 0
     total_elevation = 0
@@ -87,6 +77,21 @@ def get_frame_extent(route: Route, fixed_shape: bool = True, fixed_size: float =
                   center[0] + 0.5 * deg_size * (1. + cfg["map_extent_adjust"]),
                   center[1] - 0.25 * deg_size * (1. + cfg["map_extent_adjust"]),
                   center[1] + 0.25 * deg_size * (1. + cfg["map_extent_adjust"])]
+    return extent
+
+
+def get_frame_extent_multiple(routes: List[Route]):
+    extent = [1000., -1000., 1000., -1000.]
+    for route in routes:
+        current_extent = get_frame_extent(route)
+        if current_extent[0] < extent[0]:
+            extent[0] = current_extent[0]
+        if current_extent[2] < extent[2]:
+            extent[2] = current_extent[2]
+        if current_extent[1] > extent[1]:
+            extent[1] = current_extent[1]
+        if current_extent[3] > extent[3]:
+            extent[3] = current_extent[3]
     return extent
 
 

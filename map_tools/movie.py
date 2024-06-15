@@ -2,7 +2,7 @@ import sys
 from typing import List
 import matplotlib.pyplot as plt
 import matplotlib.animation as mani
-from .plotting import get_frame_extent, create_background_map
+from .plotting import get_frame_extent, get_frame_extent_multiple, create_background_map
 from .movie_frame import plot_frame, get_dynamic_frame_extent_for_multiple_routes
 from .config import get_yaml_config
 from .route import Route
@@ -30,9 +30,7 @@ def make_movie_with_static_map(route: Route, output_file: str = "movie", cut_at_
     with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
-            plot_frame(subroute, extent=extent)
-            writer.grab_frame()
-            plt.clf()
+            plot_frame(subroute, writer, extent=extent)
             del subroute
             progress_counter += 1
             update_progress_bar(progress_counter, nframes, frame_step=frame_step)
@@ -55,9 +53,7 @@ def make_movie_with_dynamic_map(route: Route, map_frame_size_in_deg: float = 0.1
                 extent = get_frame_extent(subroute, fixed_size=map_frame_size_in_deg, center_on="last_smooth")
             else:
                 extent = get_frame_extent(subroute, fixed_size=map_frame_size_in_deg, center_on="last")
-            plot_frame(subroute, extent=extent)
-            writer.grab_frame()
-            plt.clf()
+            plot_frame(subroute, writer, extent=extent)
             del subroute
             progress_counter += 1
             update_progress_bar(progress_counter, nframes, frame_step=frame_step)
@@ -69,21 +65,20 @@ def make_movie_with_dynamic_map(route: Route, map_frame_size_in_deg: float = 0.1
             initial_extent = extent
             final_extent = get_frame_extent(route)
             progress_counter = 0
-            for i in range(cfg["zoomout_nframes"]):
+            for i in range(cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]):
                 current_extent = [
-                    initial_extent[j] + (float(i) / cfg["zoomout_nframes"]) * (final_extent[j] - initial_extent[j]) for
+                    initial_extent[j] + (float(i) / cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]) * (
+                                final_extent[j] - initial_extent[j]) for
                     j in range(len(initial_extent))]
-                plot_frame(route, extent=current_extent)
-                writer.grab_frame()
-                plt.clf()
+                plot_frame(route, writer, extent=current_extent)
                 progress_counter += 1
-                update_progress_bar(progress_counter, cfg["zoomout_nframes"] + cfg["still_final_nframes"])
-            for i in range(cfg["still_final_nframes"]):
-                plot_frame(route, extent=final_extent)
-                writer.grab_frame()
-                plt.clf()
+                update_progress_bar(progress_counter, cfg["movie_zoomout_seconds"] * cfg["frames_per_second"] + cfg[
+                    "still_final_seconds"] * cfg["frames_per_second"])
+            for i in range(cfg["still_final_seconds"] * cfg["frames_per_second"]):
+                plot_frame(route, writer, extent=final_extent)
                 progress_counter += 1
-                update_progress_bar(progress_counter, cfg["zoomout_nframes"] + cfg["still_final_nframes"])
+                update_progress_bar(progress_counter, cfg["movie_zoomout_seconds"] * cfg["frames_per_second"] + cfg[
+                    "still_final_seconds"] * cfg["frames_per_second"])
 
 
 def make_movie_with_multiple_routes(routes: List[Route], min_map_frame_size_in_deg: float = 0.06,
@@ -97,19 +92,20 @@ def make_movie_with_multiple_routes(routes: List[Route], min_map_frame_size_in_d
         if len(route.latitude) / route.frame_step > nframes:
             nframes = int(len(route.latitude) / route.frame_step)
 
+    if frame_style == 'static':
+        extent = get_frame_extent_multiple(routes)
     with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes):
             subroutes = []
             for route in routes:
                 subroute = route[0:i * route.frame_step]
                 subroutes.append(subroute)
-            if frame_style == 'static':
-                extent = get_frame_extent(route)
             if frame_style == 'dynamic':
-                extent = get_dynamic_frame_extent_for_multiple_routes(subroutes, min_size_in_deg=min_map_frame_size_in_deg)
+                extent = get_dynamic_frame_extent_for_multiple_routes(subroutes,
+                                                                      min_size_in_deg=min_map_frame_size_in_deg)
             create_background_map(extent)
             for subroute in subroutes:
-                plot_frame(subroute, extent=extent, plot_background_map=False, add_data=False)
+                plot_frame(subroute, None, extent=extent, plot_background_map=False, add_data=False)
                 del subroute
             writer.grab_frame()
             plt.clf()

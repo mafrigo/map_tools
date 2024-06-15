@@ -7,12 +7,13 @@ from .route import Route
 from .config import get_yaml_config
 from .plotting import get_frame_extent, create_background_map, plot_route_on_map, add_data_to_bottom
 from typing import List
+import matplotlib.animation as mani
 
 cfg = get_yaml_config()
 
 
-def plot_frame(route: Route, extent: List[float] = None, plot_background_map: bool = True,
-               add_data: bool = True):
+def plot_frame(route: Route, ffmpeg_writer: mani.FFMpegWriter, extent: List[float] = None,
+               plot_background_map: bool = True, add_data: bool = True):
     if extent is None:
         extent = get_frame_extent(route.full_route)
     if plot_background_map:
@@ -29,9 +30,12 @@ def plot_frame(route: Route, extent: List[float] = None, plot_background_map: bo
                            "Current speed: %2i km/h" % (np.nan_to_num(route.speed[-1])))
     plt.axis('off')
     plt.tight_layout()
+    if ffmpeg_writer is not None:
+        ffmpeg_writer.grab_frame()
+        plt.clf()
 
 
-def plot_name_icon(route):
+def plot_name_icon(route: Route):
     icon_size = 80 if len(route.display_name) <= 1 else 140
     plt.scatter(route.longitude[-1], route.latitude[-1], icon_size, zorder=9,
                 transform=ccrs.PlateCarree(), facecolor='w', edgecolor=route.color)
@@ -39,8 +43,7 @@ def plot_name_icon(route):
              transform=ccrs.PlateCarree(), zorder=10, horizontalalignment='center', verticalalignment='center_baseline')
 
 
-def get_dynamic_frame_extent_for_multiple_routes(subroutes: List[Route],
-                                                 min_size_in_deg: float = 0.1) -> List[float]:
+def get_dynamic_frame_extent_for_multiple_routes(subroutes: List[Route], min_size_in_deg: float = 0.1) -> List[float]:
     mean_point_between_routes = [0., 0.]
     max_distance = min_size_in_deg
     for subroute in subroutes:
