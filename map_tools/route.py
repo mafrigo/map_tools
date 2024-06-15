@@ -23,11 +23,14 @@ class Route(object):
     full_route = None
     color = cfg["default_route_color"]
     display_name = ''
+    frame_step = 1
 
-    def __init__(self, file: str = ""):
+    def __init__(self, file: str = "", color: str = cfg["default_route_color"], display_name: str = ''):
         if len(file) > 0:
             self.route_from_file(file)
         self.full_route = self
+        self.color = color
+        self.display_name = display_name
 
     def route_from_file(self, file: str):
         self.file = file
@@ -165,6 +168,7 @@ class SubRoute:
         self.avg_timestep = route.avg_timestep
         self.color = route.color
         self.display_name = route.display_name
+        self.frame_step = route.frame_step
 
     def __getitem__(self, key: slice):
         return SubRoute(self, key)

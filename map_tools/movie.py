@@ -1,8 +1,9 @@
 import sys
+from typing import List
 import matplotlib.pyplot as plt
 import matplotlib.animation as mani
-from .plotting import get_frame_extent
-from .movie_frame import plot_frame
+from .plotting import get_frame_extent, create_background_map
+from .movie_frame import plot_frame, get_dynamic_frame_extent_for_multiple_routes
 from .config import get_yaml_config
 from .route import Route, SubRoute
 
@@ -19,7 +20,7 @@ def init_movie(output_file: str):
     return fig, writer
 
 
-def make_movie_with_static_map(route: Route | SubRoute, output_file: str = "movie", cut_at_frame: int = None):
+def make_movie_with_static_map(route: Route, output_file: str = "movie", cut_at_frame: int = None):
     fig, writer = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
@@ -41,7 +42,7 @@ def make_movie_with_static_map(route: Route | SubRoute, output_file: str = "movi
     writer.finish()
 
 
-def make_movie_with_dynamic_map(route: Route | SubRoute, map_frame_size_in_deg: float = 0.1, output_file: str = "movie",
+def make_movie_with_dynamic_map(route: Route, map_frame_size_in_deg: float = 0.1, output_file: str = "movie",
                                 cut_at_frame: int = None, final_zoomout: bool = True):
     fig, writer = init_movie(output_file)
     progress_counter = 0
@@ -85,8 +86,42 @@ def make_movie_with_dynamic_map(route: Route | SubRoute, map_frame_size_in_deg: 
                 update_progress_bar(progress_counter, cfg["zoomout_nframes"] + cfg["still_final_nframes"])
 
 
-def get_frame_step_from_real_time(route: Route | SubRoute):
-    #note: this only works if the timestep is constant; an interpolation approach would be more general
+def make_movie_with_multiple_routes(routes: List[Route], min_map_frame_size_in_deg: float = 0.1,
+                                    frame_style: str = 'dynamic', output_file: str = "race_movie",
+                                    cut_at_frame: int = None):
+    fig, writer = init_movie(output_file)
+    progress_counter = 0
+    nframes = 0
+    for route in routes:
+        route.frame_step = get_frame_step_from_real_time(route)
+        if len(route.latitude) / route.frame_step > nframes:
+            nframes = int(len(route.latitude) / route.frame_step)
+
+    with writer.saving(fig, "output/" + output_file + ".mp4", 100):
+        for i in range(1, nframes):
+            subroutes = []
+            for route in routes:
+                subroute = route[0:i * route.frame_step]
+                subroutes.append(subroute)
+            if frame_style == 'static':
+                extent = get_frame_extent(route)
+            if frame_style == 'dynamic':
+                extent = get_dynamic_frame_extent_for_multiple_routes(subroutes, min_size_in_deg=min_map_frame_size_in_deg)
+            create_background_map(extent)
+            for subroute in subroutes:
+                plot_frame(subroute, extent=extent, plot_background_map=False)
+                del subroute
+            writer.grab_frame()
+            plt.clf()
+            progress_counter += 1
+            update_progress_bar(progress_counter, nframes, frame_step=1)
+            if cut_at_frame is not None:
+                if i >= cut_at_frame:
+                    break
+
+
+def get_frame_step_from_real_time(route: Route | SubRoute) -> int:
+    # note: this only works if the timestep is constant; an interpolation approach would be more general
     return int(cfg["real_seconds_per_video_second"] / (cfg["frames_per_second"] * route.avg_timestep))
 
 

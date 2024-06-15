@@ -11,28 +11,48 @@ from typing import List
 cfg = get_yaml_config()
 
 
-def plot_frame(route: Route | SubRoute, extent: List[float] = None):
+def plot_frame(route: Route | SubRoute, extent: List[float] = None, plot_background_map=True):
     if extent is None:
         extent = get_frame_extent(route.full_route)
-    background_map = create_background_map(extent)
+    if plot_background_map:
+        background_map = create_background_map(extent)
     plot_route_on_map(route, False)
-    add_data_to_bottom(extent,
-                       "Total length: %3i km" % route.length[-1],
-                       "Elevation: %4i m" % (route.altitude[-1]),
-                       "Current speed: %2i km/h" % (np.nan_to_num(route.speed[-1])))
     if route.display_name is not None and route.display_name != "":
         plot_name_icon(route)
     if cfg["add_trail_to_movies"]:
         background_map.add_collection(get_trail(route))
+    add_data_to_bottom(extent,
+                       "Total length: %3i km" % route.length[-1],
+                       "Elevation: %4i m" % (route.altitude[-1]),
+                       "Current speed: %2i km/h" % (np.nan_to_num(route.speed[-1])))
     plt.axis('off')
     plt.tight_layout()
 
 
 def plot_name_icon(route):
-    plt.scatter(route.longitude[-1], route.latitude[-1], 150, zorder=9,
+    icon_size = 80 if len(route.display_name) <= 1 else 140
+    plt.scatter(route.longitude[-1], route.latitude[-1], icon_size, zorder=9,
                 transform=ccrs.PlateCarree(), facecolor='w', edgecolor=route.color)
     plt.text(route.longitude[-1], route.latitude[-1], route.display_name, color=cfg["text_color"], fontsize='x-small',
              transform=ccrs.PlateCarree(), zorder=10, horizontalalignment='center', verticalalignment='center_baseline')
+
+
+def get_dynamic_frame_extent_for_multiple_routes(subroutes: List[Route] | List[SubRoute],
+                                                 min_size_in_deg: float = 0.1) -> List[float]:
+    mean_point_between_routes = [0., 0.]
+    max_distance = min_size_in_deg
+    for subroute in subroutes:
+        mean_point_between_routes[0] += subroute.longitude[-1] / len(subroutes)
+        mean_point_between_routes[1] += subroute.latitude[-1] / len(subroutes)
+    for subroute in subroutes:
+        distance_to_mean_point = np.sqrt((mean_point_between_routes[0] - subroute.longitude[-1]) ** 2 + (
+                    mean_point_between_routes[1] - subroute.latitude[-1]) ** 2)
+        if distance_to_mean_point > max_distance:
+            max_distance = distance_to_mean_point
+    return [mean_point_between_routes[0] - 2 * max_distance * (1. + cfg["map_extent_adjust"]),
+            mean_point_between_routes[0] + 2 * max_distance * (1. + cfg["map_extent_adjust"]),
+            mean_point_between_routes[1] - max_distance * (1. + cfg["map_extent_adjust"]),
+            mean_point_between_routes[1] + max_distance * (1. + cfg["map_extent_adjust"])]
 
 
 def get_trail(route: Route | SubRoute) -> LineCollection:
