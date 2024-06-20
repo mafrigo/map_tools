@@ -1,5 +1,5 @@
 import sys
-from typing import List
+from typing import List, Tuple
 import matplotlib.pyplot as plt
 import matplotlib.animation as mani
 from .plotting import get_frame_extent, get_frame_extent_multiple, create_background_map
@@ -10,17 +10,23 @@ from .route import Route
 cfg = get_yaml_config()
 
 
-def init_movie(output_file: str):
-    plt.rcParams['animation.ffmpeg_path'] = cfg["ffmpeg_path"]
-    plt.rcParams['savefig.bbox'] = "tight"
-    metadata = dict(title=output_file, artist='Matplotlib')
+def init_movie(output_file: str) -> Tuple[plt.Figure, mani.FFMpegWriter]:
+    plt.rcParams["animation.ffmpeg_path"] = cfg["ffmpeg_path"]
+    plt.rcParams["savefig.bbox"] = "tight"
+    metadata = dict(title=output_file, artist="Matplotlib")
     fig = plt.figure()
-    writer = mani.FFMpegWriter(fps=cfg["frames_per_second"], metadata=metadata, extra_args=['-vcodec', 'libx264'])
+    writer = mani.FFMpegWriter(
+        fps=cfg["frames_per_second"],
+        metadata=metadata,
+        extra_args=["-vcodec", "libx264"],
+    )
     writer.setup(fig, output_file)
     return fig, writer
 
 
-def make_movie_with_static_map(route: Route, output_file: str = "movie", cut_at_frame: int = None):
+def make_movie_with_static_map(
+    route: Route, output_file: str = "movie"
+) -> None:
     fig, writer = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
@@ -34,14 +40,15 @@ def make_movie_with_static_map(route: Route, output_file: str = "movie", cut_at_
             del subroute
             progress_counter += 1
             update_progress_bar(progress_counter, nframes, frame_step=frame_step)
-            if cut_at_frame is not None:
-                if i >= cut_at_frame:
-                    break
     writer.finish()
 
 
-def make_movie_with_dynamic_map(route: Route, map_frame_size_in_deg: float = 0.1, output_file: str = "movie",
-                                cut_at_frame: int = None, final_zoomout: bool = True):
+def make_movie_with_dynamic_map(
+    route: Route,
+    map_frame_size_in_deg: float = 0.1,
+    output_file: str = "movie",
+    final_zoomout: bool = True,
+) -> None:
     fig, writer = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
@@ -50,16 +57,17 @@ def make_movie_with_dynamic_map(route: Route, map_frame_size_in_deg: float = 0.1
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
             if i > 5:
-                extent = get_frame_extent(subroute, fixed_size=map_frame_size_in_deg, center_on="last_smooth")
+                extent = get_frame_extent(
+                    subroute, fixed_size=map_frame_size_in_deg, center_on="last_smooth"
+                )
             else:
-                extent = get_frame_extent(subroute, fixed_size=map_frame_size_in_deg, center_on="last")
+                extent = get_frame_extent(
+                    subroute, fixed_size=map_frame_size_in_deg, center_on="last"
+                )
             plot_frame(subroute, writer, extent=extent)
             del subroute
             progress_counter += 1
             update_progress_bar(progress_counter, nframes, frame_step=frame_step)
-            if cut_at_frame is not None:
-                if i >= cut_at_frame:
-                    break
         if final_zoomout:
             print("\nRendering final zoomout")
             initial_extent = extent
@@ -67,23 +75,38 @@ def make_movie_with_dynamic_map(route: Route, map_frame_size_in_deg: float = 0.1
             progress_counter = 0
             for i in range(cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]):
                 current_extent = [
-                    initial_extent[j] + (float(i) / cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]) * (
-                                final_extent[j] - initial_extent[j]) for
-                    j in range(len(initial_extent))]
+                    initial_extent[j]
+                    + (
+                        float(i)
+                        / cfg["movie_zoomout_seconds"]
+                        * cfg["frames_per_second"]
+                    )
+                    * (final_extent[j] - initial_extent[j])
+                    for j in range(len(initial_extent))
+                ]
                 plot_frame(route, writer, extent=current_extent)
                 progress_counter += 1
-                update_progress_bar(progress_counter, cfg["movie_zoomout_seconds"] * cfg["frames_per_second"] + cfg[
-                    "still_final_seconds"] * cfg["frames_per_second"])
+                update_progress_bar(
+                    progress_counter,
+                    cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]
+                    + cfg["still_final_seconds"] * cfg["frames_per_second"],
+                )
             for i in range(cfg["still_final_seconds"] * cfg["frames_per_second"]):
                 plot_frame(route, writer, extent=final_extent)
                 progress_counter += 1
-                update_progress_bar(progress_counter, cfg["movie_zoomout_seconds"] * cfg["frames_per_second"] + cfg[
-                    "still_final_seconds"] * cfg["frames_per_second"])
+                update_progress_bar(
+                    progress_counter,
+                    cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]
+                    + cfg["still_final_seconds"] * cfg["frames_per_second"],
+                )
 
 
-def make_movie_with_multiple_routes(routes: List[Route], min_map_frame_size_in_deg: float = 0.06,
-                                    frame_style: str = 'dynamic', output_file: str = "race_movie",
-                                    cut_at_frame: int = None):
+def make_movie_with_multiple_routes(
+    routes: List[Route],
+    min_map_frame_size_in_deg: float = 0.06,
+    frame_style: str = "dynamic",
+    output_file: str = "race_movie",
+) -> None:
     fig, writer = init_movie(output_file)
     progress_counter = 0
     nframes = 0
@@ -92,37 +115,48 @@ def make_movie_with_multiple_routes(routes: List[Route], min_map_frame_size_in_d
         if len(route.latitude) / route.frame_step > nframes:
             nframes = int(len(route.latitude) / route.frame_step)
 
-    if frame_style == 'static':
+    if frame_style == "static":
         extent = get_frame_extent_multiple(routes)
     with writer.saving(fig, "output/" + output_file + ".mp4", 100):
         for i in range(1, nframes):
             subroutes = []
             for route in routes:
-                subroute = route[0:i * route.frame_step]
+                subroute = route[0 : i * route.frame_step]
                 subroutes.append(subroute)
-            if frame_style == 'dynamic':
-                extent = get_dynamic_frame_extent_for_multiple_routes(subroutes,
-                                                                      min_size_in_deg=min_map_frame_size_in_deg)
+            if frame_style == "dynamic":
+                extent = get_dynamic_frame_extent_for_multiple_routes(
+                    subroutes, min_size_in_deg=min_map_frame_size_in_deg
+                )
             create_background_map(extent)
             for subroute in subroutes:
-                plot_frame(subroute, None, extent=extent, plot_background_map=False, add_data=False)
+                plot_frame(
+                    subroute,
+                    None,
+                    extent=extent,
+                    plot_background_map=False,
+                    add_data=False,
+                )
                 del subroute
             writer.grab_frame()
             plt.clf()
             progress_counter += 1
             update_progress_bar(progress_counter, nframes, frame_step=1)
-            if cut_at_frame is not None:
-                if i >= cut_at_frame:
-                    break
 
 
 def get_frame_step_from_real_time(route: Route) -> int:
     # note: this only works if the timestep is constant; an interpolation approach would be more general
-    return int(cfg["real_seconds_per_video_second"] / (cfg["frames_per_second"] * route.avg_timestep))
+    return int(
+        cfg["real_seconds_per_video_second"]
+        / (cfg["frames_per_second"] * route.avg_timestep)
+    )
 
 
-def update_progress_bar(progress_counter: int, nframes: int, frame_step: int = 1):
+def update_progress_bar(progress_counter: int, nframes: int, frame_step: int = 1) -> None:
     progress = 100 * progress_counter / nframes
-    sys.stdout.write('\r')
-    sys.stdout.write("[{:{}}] {:.1f}%".format("=" * int(frame_step * progress / 2.), 50, frame_step * progress))
+    sys.stdout.write("\r")
+    sys.stdout.write(
+        "[{:{}}] {:.1f}%".format(
+            "=" * int(frame_step * progress / 2.0), 50, frame_step * progress
+        )
+    )
     sys.stdout.flush()
