@@ -31,14 +31,15 @@ class Route(object):
         file: str = "",
         color: str = cfg["default_route_color"],
         display_name: str = "",
+        time_delay: int = 0
     ) -> None:
         if len(file) > 0:
-            self.route_from_file(file)
+            self.route_from_file(file, time_delay)
         self.full_route = self
         self.color = color
         self.display_name = display_name
 
-    def route_from_file(self, file: str) -> None:
+    def route_from_file(self, file: str, time_delay: int = 0) -> None:
         self.file = file
         if file.endswith(".gpx"):
             route_array = self.read_gpx()
@@ -47,7 +48,7 @@ class Route(object):
         self.latitude = route_array[:, 0]
         self.longitude = route_array[:, 1]
         self.altitude = route_array[:, 2]
-        self.time = route_array[:, 3]
+        self.time = route_array[:, 3] + time_delay
         self.n_gps_entries = len(self.latitude)
         self.length_segments = self.get_length_segments()
         self.length = self.get_length()
@@ -57,7 +58,7 @@ class Route(object):
         self.elevation_gain = self.get_elevation_gain()
         self.max_index = len(self.latitude)
         self.route_segment_id = self.get_route_segments()
-        self.avg_timestep = np.mean(self.time_intervals)
+        self.avg_timestep = np.median(self.time_intervals)
 
     def __add__(self, other: "Route") -> "Route":
         return add_routes(self, other)
@@ -123,7 +124,10 @@ class Route(object):
                     ).strip("</ele>")  # altitude
                 elif stripped_line.startswith("<time>"):
                     time_string = stripped_line.strip("<time>").strip("</time>")
-                    time = datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%SZ")
+                    try:
+                        time = datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%SZ")
+                    except ValueError:
+                        time = datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%S.%fZ")
                     if segment_counter == 0:
                         start_time = time
                     route_array[segment_counter, 3] = (

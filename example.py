@@ -7,19 +7,21 @@ t0 = time.time()
 route = Route("route_files/Erding_Whirlpool.gpx", color='violet', display_name='1')
 route2 = Route("route_files/Bad_Toelz.gpx", color='blue', display_name='2')
 route3 = Route("route_files/Munich_Prague.gpx", color='darkgreen', display_name='3')
-route4 = Route("route_files/Munich_Budapest.gpx", color='k', display_name='4')
+route4 = Route("route_files/Munich_Budapest.gpx", color='red', display_name='MF')
 route5 = Route("route_files/Garching_Seefeld.gpx", color='red', display_name='5')
 route6 = Route("route_files/Morning_Ride.gpx", color='crimson', display_name='6')
 route7 = Route("route_files/Ronde_van_Noord_Holland.gpx", color='red', display_name='7')
+route8 = Route("route_files/Passau_Budapest.gpx", color='blue', display_name='MS', time_delay=27*3600)
 
 # Plot whole route on a map
-plot_single_route(route7, output_file="map")
+#plot_single_route(route7, output_file="map")
 
 # Join two maps and plot them separating continuous ride segments with different colours
-plot_single_route(route + route2, output_file="map_joined", color_segments=True)
+#plot_single_route(route + route2, output_file="map_joined", color_segments=True)
 
 # Plot two routes together
-plot_multiple_routes([route, route2, route3, route4, route5], output_file="multiple_routes")
+#plot_multiple_routes([route, route2, route3, route4, route5], output_file="multiple_routes")
+plot_multiple_routes([route4, route8], output_file="multiple_routes")
 
 # Make a movie of the route on a static map - commented out because it takes a long time
 #make_movie_with_static_map(route2, output_file="static_movie")
@@ -28,7 +30,8 @@ plot_multiple_routes([route, route2, route3, route4, route5], output_file="multi
 #make_movie_with_dynamic_map(route, map_frame_size_in_deg=0.1, output_file="dynamic_movie", final_zoomout=False)
 
 # Make a movie of two routes together
-make_movie_with_multiple_routes([route5, route2], frame_style='dynamic')
+#make_movie_with_multiple_routes([route4, route8], dynamic_frame=True, use_real_time=False)
+make_movie_with_multiple_routes([route2, route5], dynamic_frame=True, use_real_time=True)
 
 t1 = time.time()
 print("\nFinished in %.1f seconds" % (t1 - t0))

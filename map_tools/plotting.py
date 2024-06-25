@@ -36,7 +36,7 @@ def plot_multiple_routes(
         routes: List[Route], extent: List[float] = [], output_file: str = "multi_map"
 ) -> None:
     if len(extent) == 0:
-        get_frame_extent_multiple(routes)
+        extent = get_frame_extent_multiple(routes)
     create_background_map(extent)
     total_length = 0
     total_elevation = 0

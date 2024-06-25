@@ -14,6 +14,3 @@ Produces map movies and plots from GPS routes (.gpx format). Maps come from Open
 - Add your route in .gpx format to the route_files folder.
 - Edit example.py to load your route file and create a movie from it.
 - Run example.py.
-
-## TODO:
-- Add a real time option for multiple route movies (+ display time?)
