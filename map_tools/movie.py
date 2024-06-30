@@ -140,7 +140,7 @@ def make_movie_with_multiple_routes(
             for route_id in range(len(routes)):
                 route = routes[route_id]
                 if routes_finished[route_id]:
-                    current_subroutes[route_id] = route
+                    routes_to_be_plotted.append(route)
                     continue
                 if use_real_time:
                     if route.time[0] > current_time_in_seconds:
