@@ -166,6 +166,34 @@ class Route(object):
     def set_display_name(self, display_name: str) -> None:
         self.display_name = display_name
 
+    def compress(self, factor=0):
+        if factor==0:
+            factor=10
+        for attr in [
+            "latitude",
+            "longitude",
+            "altitude",
+            "length_segments",
+            "time_intervals",
+            "speed",
+            "avg_speed",
+            "route_segment_id",
+            "time",
+            "length",
+            "elevation_gain",
+        ]:
+            setattr(
+                self,
+                attr,
+                getattr(self, attr)[::factor]
+            )
+        self.n_gps_entries = len(self.latitude)
+        self.max_index = self.n_gps_entries
+        self.time_intervals = self.get_time_intervals()
+        self.length_segments = self.get_length_segments()
+        self.avg_timestep = np.median(self.time_intervals)
+        self.frame_step = self.frame_step
+
 
 def add_routes(route1: Route, route2: Route) -> Route:
     new_route = Route()

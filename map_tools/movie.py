@@ -138,9 +138,10 @@ def make_movie_with_multiple_routes(
                 current_time_in_seconds += cfg["real_seconds_per_video_second"]/cfg["frames_per_second"]
             routes_to_be_plotted = []
             for route_id in range(len(routes)):
-                if routes_finished[route_id]:
-                    continue
                 route = routes[route_id]
+                if routes_finished[route_id]:
+                    current_subroutes[route_id] = route
+                    continue
                 if use_real_time:
                     if route.time[0] > current_time_in_seconds:
                         routes_paused[route_id] = True
