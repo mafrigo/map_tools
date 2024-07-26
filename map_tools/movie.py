@@ -77,11 +77,7 @@ def make_movie_with_dynamic_map(
             for i in range(cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]):
                 current_extent = [
                     initial_extent[j]
-                    + (
-                        float(i)
-                        / cfg["movie_zoomout_seconds"]
-                        * cfg["frames_per_second"]
-                    )
+                    + (float(i) / (cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]))
                     * (final_extent[j] - initial_extent[j])
                     for j in range(len(initial_extent))
                 ]
@@ -104,10 +100,11 @@ def make_movie_with_dynamic_map(
 
 def make_movie_with_multiple_routes(
     routes: List[Route],
-    min_map_frame_size_in_deg: float = 0.06,
+    min_map_frame_size_in_deg: float = 0.2,
     dynamic_frame: bool = True,
     use_real_time: bool = True,
     output_file: str = "race_movie",
+    final_zoomout: bool = True,
 ) -> None:
     import cartopy.crs as ccrs
     fig, writer = init_movie(output_file)
@@ -141,6 +138,7 @@ def make_movie_with_multiple_routes(
                 route = routes[route_id]
                 if routes_finished[route_id]:
                     routes_to_be_plotted.append(route)
+                    routes_paused[route_id] = True
                     continue
                 if use_real_time:
                     if route.time[0] > current_time_in_seconds:
@@ -186,14 +184,67 @@ def make_movie_with_multiple_routes(
                 plt.clf()
                 progress_counter += 1
             update_progress_bar(progress_counter, nframes, frame_step=1)
+        if final_zoomout:
+            print("\nRendering final zoomout")
+            initial_extent = extent
+            final_extent = get_dynamic_frame_extent_for_multiple_routes(routes,
+                                                                        min_size_in_deg=min_map_frame_size_in_deg)
+            progress_counter = 0
+            for i in range(cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]):
+                current_extent = [
+                    initial_extent[j]
+                    + (float(i) / (cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]))
+                    * (final_extent[j] - initial_extent[j])
+                    for j in range(len(initial_extent))
+                ]
+                create_background_map(current_extent)
+                for route in routes:
+                    plot_frame(
+                        route,
+                        None,
+                        extent=current_extent,
+                        plot_background_map=False,
+                        add_data=False,
+                    )
+                writer.grab_frame()
+                plt.clf()
+                progress_counter += 1
+                update_progress_bar(
+                    progress_counter,
+                    cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]
+                    + cfg["still_final_seconds"] * cfg["frames_per_second"],
+                )
+            for i in range(cfg["still_final_seconds"] * cfg["frames_per_second"]):
+                create_background_map(final_extent)
+                for route in routes:
+                    plot_frame(
+                        route,
+                        None,
+                        extent=final_extent,
+                        plot_background_map=False,
+                        add_data=False,
+                    )
+                writer.grab_frame()
+                plt.clf()
+                progress_counter += 1
+                update_progress_bar(
+                    progress_counter,
+                    cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]
+                    + cfg["still_final_seconds"] * cfg["frames_per_second"],
+                )
 
 
 def get_frame_step_from_real_time(route: Route) -> int:
     # note: this only works if the timestep is constant; an interpolation approach would be more general
-    return int(
+    frame_step = int(np.round(
         cfg["real_seconds_per_video_second"]
         / (cfg["frames_per_second"] * route.avg_timestep)
-    )
+    ))
+    if frame_step > 0:
+        return frame_step
+    else:
+        print("Warning: not enough data points for selected frame rate")
+        return 1
 
 
 def update_progress_bar(progress_counter: int, nframes: int, frame_step: int = 1) -> None:
