@@ -100,7 +100,7 @@ def make_movie_with_dynamic_map(
 
 def make_movie_with_multiple_routes(
     routes: List[Route],
-    min_map_frame_size_in_deg: float = 0.2,
+    min_map_frame_size_in_deg: float = 0.1,
     dynamic_frame: bool = True,
     use_real_time: bool = True,
     output_file: str = "race_movie",
@@ -187,8 +187,7 @@ def make_movie_with_multiple_routes(
         if final_zoomout:
             print("\nRendering final zoomout")
             initial_extent = extent
-            final_extent = get_dynamic_frame_extent_for_multiple_routes(routes,
-                                                                        min_size_in_deg=min_map_frame_size_in_deg)
+            final_extent = get_frame_extent_multiple(routes)
             progress_counter = 0
             for i in range(cfg["movie_zoomout_seconds"] * cfg["frames_per_second"]):
                 current_extent = [
