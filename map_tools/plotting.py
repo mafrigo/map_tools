@@ -143,8 +143,8 @@ def plot_route_on_map(route: Route, color_segments: bool = False) -> None:
             route.latitude,
             color=route_colors,
             transform=ccrs.PlateCarree(),
-            lw=1,
-            s=1,
+            lw=cfg["route_thickness"],
+            s=cfg["route_thickness"],
             marker=".",
         )
     else:
@@ -153,7 +153,7 @@ def plot_route_on_map(route: Route, color_segments: bool = False) -> None:
             route.latitude,
             color=route.color,
             transform=ccrs.PlateCarree(),
-            lw=1,
+            lw=cfg["route_thickness"],
         )
 
 
