@@ -42,7 +42,7 @@ class Route(object):
     def route_from_file(self, file: str, time_delay: int = 0) -> None:
         self.file = file
         if file.endswith(".gpx"):
-            route_array = self.read_gpx()
+            route_array, time_data_available = self.read_gpx()
         else:
             raise IOError("Only .gpx files are currently supported")
         self.latitude = route_array[:, 0]
@@ -52,13 +52,19 @@ class Route(object):
         self.n_gps_entries = len(self.latitude)
         self.length_segments = self.get_length_segments()
         self.length = self.get_length()
-        self.time_intervals = self.get_time_intervals()
-        self.speed = self.get_speed()
-        self.avg_speed = self.get_avg_speed()
+        if time_data_available:
+            self.time_intervals = self.get_time_intervals()
+            self.speed = self.get_speed()
+            self.avg_speed = self.get_avg_speed()
+            self.avg_timestep = np.median(self.time_intervals)
+        else:
+            self.speed = np.zeros(self.n_gps_entries)
+            self.avg_speed = self.speed
+            self.time_intervals = self.speed
+            self.avg_timestep = 1
         self.elevation_gain = self.get_elevation_gain()
         self.max_index = len(self.latitude)
         self.route_segment_id = self.get_route_segments()
-        self.avg_timestep = np.median(self.time_intervals)
 
     def __add__(self, other: "Route") -> "Route":
         return add_routes(self, other)
@@ -106,12 +112,13 @@ class Route(object):
                 segment_id[i] = latest_id
         return segment_id
 
-    def read_gpx(self) -> np.ndarray:
+    def read_gpx(self) -> (np.ndarray, bool):
         with open(self.file) as f:
             lines = f.readlines()
             n_segments = " ".join(lines).count("</trkpt>")
             route_array = np.zeros([n_segments, 4])
             segment_counter = 0
+            time_data_available = False
             for line in lines:
                 stripped_line = line.strip()
                 if stripped_line.startswith("<trkpt"):
@@ -123,6 +130,7 @@ class Route(object):
                         "<ele>"
                     ).strip("</ele>")  # altitude
                 elif stripped_line.startswith("<time>"):
+                    time_data_available = True
                     time_string = stripped_line.strip("<time>").strip("</time>")
                     try:
                         time = datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%SZ")
@@ -137,7 +145,7 @@ class Route(object):
                     segment_counter = segment_counter + 1
                 else:
                     continue
-        return route_array
+        return route_array, time_data_available
 
     def __getitem__(self, key: slice) -> "Route":
         new_route = Route()
@@ -225,4 +233,5 @@ def add_routes(route1: Route, route2: Route) -> Route:
         )
     for attr in ["n_gps_entries", "max_index"]:
         setattr(new_route, attr, getattr(route1, attr) + getattr(route2, attr))
+    new_route.file = route1.file
     return new_route

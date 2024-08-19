@@ -23,7 +23,7 @@ def plot_single_route(
         extent,
         "Total length: %3i km" % route.length[-1],
         "Total elevation: %4i m" % route.elevation_gain[-1],
-        "Avg. speed: %2i km/h" % np.mean(route.speed[route.speed > 10.0]),
+        "Avg. speed: %2i km/h" %  np.nan_to_num(np.mean(route.speed[route.speed > 10.0])),
     )
     plt.axis("off")
     plt.tight_layout()

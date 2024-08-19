@@ -235,10 +235,14 @@ def make_movie_with_multiple_routes(
 
 def get_frame_step_from_real_time(route: Route) -> int:
     # note: this only works if the timestep is constant; an interpolation approach would be more general
-    frame_step = int(np.round(
-        cfg["real_seconds_per_video_second"]
-        / (cfg["frames_per_second"] * route.avg_timestep)
-    ))
+    try:
+        frame_step = int(np.round(
+            cfg["real_seconds_per_video_second"]
+            / (cfg["frames_per_second"] * route.avg_timestep)
+        ))
+    except OverflowError:
+        print("Warning: failure to calculate optimal frame step - is time data missing?")
+        return 1
     if frame_step > 0:
         return frame_step
     else:
