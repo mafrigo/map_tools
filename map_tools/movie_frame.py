@@ -36,9 +36,10 @@ def plot_frame(
     if add_data:
         add_data_to_bottom(
             extent,
-            "Total length: %3i km" % route.length[-1],
-            "Elevation: %4i m" % (route.altitude[-1]),
-            "Current speed: %2i km/h" % (np.nan_to_num(route.speed[-1])),
+            route.length[-1],
+            route.altitude[-1],
+            route.time[-1],
+            np.nan_to_num(route.speed[-1]),
         )
     plt.axis("off")
     plt.tight_layout()

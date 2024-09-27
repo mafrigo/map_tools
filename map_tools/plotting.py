@@ -21,14 +21,15 @@ def plot_single_route(
     plot_route_on_map(route, color_segments)
     add_data_to_bottom(
         extent,
-        "Total length: %3i km" % route.length[-1],
-        "Total elevation: %4i m" % route.elevation_gain[-1],
-        "Avg. speed: %2i km/h" %  np.nan_to_num(np.mean(route.speed[route.speed > 10.0])),
+        route.length[-1],
+        route.elevation_gain[-1],
+        np.nan_to_num(np.sum(route.time_intervals[route.speed > 10.0])),
+        np.nan_to_num(np.mean(route.speed[route.speed > 10.0])),
     )
     plt.axis("off")
     plt.tight_layout()
     if output_file != "":
-        plt.savefig("output/" + output_file)
+        plt.savefig("output/" + output_file, dpi=cfg["image_dpi_resolution"])
     plt.clf()
 
 
@@ -40,19 +41,22 @@ def plot_multiple_routes(
     create_background_map(extent)
     total_length = 0
     total_elevation = 0
+    total_time = 0
     for route in routes:
         plot_route_on_map(route, False)
         total_length += route.length[-1]
         total_elevation += route.elevation_gain[-1]
+        total_time += route.time[-1]
     add_data_to_bottom(
         extent,
-        "Total length: %3i km" % total_length,
-        "",
-        "Total elevation: %4i m" % total_elevation,
+        total_length,
+        total_elevation,
+        total_time,
+        0.,
     )
     plt.axis("off")
     plt.tight_layout()
-    plt.savefig("output/" + output_file)
+    plt.savefig("output/" + output_file, dpi=cfg["image_dpi_resolution"])
     plt.clf()
 
 
@@ -157,28 +161,82 @@ def plot_route_on_map(route: Route, color_segments: bool = False) -> None:
         )
 
 
-def add_data_to_bottom(extent: List[float], data1: str, data2: str, data3: str) -> None:
+def add_data_to_bottom(extent: List[float], distance: float, elevation_gain: float, time: float, speed: float) -> None:
     plt.text(
-        extent[0] + 0.02 * (extent[1] - extent[0]),
+        extent[0] + 0.1 * (extent[1] - extent[0]),
         extent[2] - 0.05 * (extent[3] - extent[2]),
-        data1,
-        color=cfg["text_color"],
-        transform=ccrs.PlateCarree(),
-        horizontalalignment="left",
-    )
-    plt.text(
-        extent[0] + 0.5 * (extent[1] - extent[0]),
-        extent[2] - 0.05 * (extent[3] - extent[2]),
-        data2,
+        "Distance",
         color=cfg["text_color"],
         transform=ccrs.PlateCarree(),
         horizontalalignment="center",
+        fontsize=cfg["fontsize_small"],
     )
     plt.text(
-        extent[1] - 0.02 * (extent[1] - extent[0]),
-        extent[2] - 0.05 * (extent[3] - extent[2]),
-        data3,
+        extent[0] + 0.1 * (extent[1] - extent[0]),
+        extent[2] - 0.1 * (extent[3] - extent[2]),
+        "%3i km" %distance,
         color=cfg["text_color"],
         transform=ccrs.PlateCarree(),
-        horizontalalignment="right",
+        horizontalalignment="center",
+        weight="bold",
+        fontsize=cfg["fontsize_large"],
+    )
+    plt.text(
+        extent[0] + 0.35 * (extent[1] - extent[0]),
+        extent[2] - 0.05 * (extent[3] - extent[2]),
+        "Elevation",
+        color=cfg["text_color"],
+        transform=ccrs.PlateCarree(),
+        horizontalalignment="center",
+        fontsize=cfg["fontsize_small"],
+    )
+    plt.text(
+        extent[0] + 0.35 * (extent[1] - extent[0]),
+        extent[2] - 0.1 * (extent[3] - extent[2]),
+        "%3i m" %elevation_gain,
+        color=cfg["text_color"],
+        transform=ccrs.PlateCarree(),
+        horizontalalignment="center",
+        weight="bold",
+        fontsize=cfg["fontsize_large"],
+    )
+    plt.text(
+        extent[0] + 0.65 * (extent[1] - extent[0]),
+        extent[2] - 0.05 * (extent[3] - extent[2]),
+        "Time",
+        color=cfg["text_color"],
+        transform=ccrs.PlateCarree(),
+        horizontalalignment="center",
+        fontsize=cfg["fontsize_small"],
+    )
+    hours = int(time/3600.)
+    minutes = int((time-3600*hours)/60)
+    plt.text(
+        extent[0] + 0.65 * (extent[1] - extent[0]),
+        extent[2] - 0.1 * (extent[3] - extent[2]),
+        "%ih%im" %(hours, minutes),
+        color=cfg["text_color"],
+        transform=ccrs.PlateCarree(),
+        horizontalalignment="center",
+        weight="bold",
+        fontsize=cfg["fontsize_large"],
+    )
+    plt.text(
+        extent[1] - 0.1 * (extent[1] - extent[0]),
+        extent[2] - 0.05 * (extent[3] - extent[2]),
+        "Speed",
+        color=cfg["text_color"],
+        transform=ccrs.PlateCarree(),
+        horizontalalignment="center",
+        fontsize=cfg["fontsize_small"],
+    )
+    plt.text(
+        extent[1] - 0.1 * (extent[1] - extent[0]),
+        extent[2] - 0.1 * (extent[3] - extent[2]),
+        "%.1f km/h" %speed,
+        color=cfg["text_color"],
+        transform=ccrs.PlateCarree(),
+        horizontalalignment="center",
+        weight="bold",
+        fontsize=cfg["fontsize_large"],
     )
