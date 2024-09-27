@@ -233,7 +233,7 @@ def add_data_to_bottom(extent: List[float], distance: float, elevation_gain: flo
     plt.text(
         extent[1] - 0.1 * (extent[1] - extent[0]),
         extent[2] - 0.1 * (extent[3] - extent[2]),
-        "%.1f km/h" %speed,
+        "%.1f km/h" %np.round(speed, 1),
         color=cfg["text_color"],
         transform=ccrs.PlateCarree(),
         horizontalalignment="center",
