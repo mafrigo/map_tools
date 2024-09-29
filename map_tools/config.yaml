@@ -11,4 +11,4 @@ text_color: black
 add_trail_to_movies: False #slows down computation quite a lot
 fontsize_small: 10
 fontsize_large: 12
-image_dpi_resolution: 1500
+image_dpi_resolution: 400
