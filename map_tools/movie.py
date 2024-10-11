@@ -100,7 +100,7 @@ def make_movie_with_dynamic_map(
 
 def make_movie_with_multiple_routes(
     routes: List[Route],
-    min_map_frame_size_in_deg: float = 0.1,
+    min_map_frame_size_in_deg: float = cfg["default_min_frame_size_in_deg"],
     dynamic_frame: bool = True,
     use_real_time: bool = True,
     output_file: str = "race_movie",

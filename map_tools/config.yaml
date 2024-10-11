@@ -1,7 +1,7 @@
 ffmpeg_path: 'C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe'
 frames_per_second: 30
-real_seconds_per_video_second: 600
-movie_zoomout_seconds: 6
+real_seconds_per_video_second: 600 #120 # 600
+movie_zoomout_seconds: 2 #6
 still_final_seconds: 2
 map_extent_adjust: 0.2
 osm_zoom_level_adjust: 1.2
@@ -12,3 +12,4 @@ add_trail_to_movies: False #slows down computation quite a lot
 fontsize_small: 10
 fontsize_large: 12
 image_dpi_resolution: 400
+default_min_frame_size_in_deg: 0.1

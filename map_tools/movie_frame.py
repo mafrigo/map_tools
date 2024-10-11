@@ -73,7 +73,7 @@ def plot_name_icon(route: Route) -> None:
 
 
 def get_dynamic_frame_extent_for_multiple_routes(
-    subroutes: List[Route], min_size_in_deg: float = 0.1
+    subroutes: List[Route], min_size_in_deg: float = cfg["default_min_frame_size_in_deg"]
 ) -> List[float]:
     mean_point_between_routes = [0.0, 0.0]
     max_distance = min_size_in_deg
