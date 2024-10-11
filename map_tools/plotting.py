@@ -60,7 +60,7 @@ def plot_multiple_routes(
     plt.clf()
 
 
-def get_zoom_level(delta: int) -> int:
+def get_zoom_level(delta: float) -> int:
     return int(
         np.clip(
             np.round(np.log2((cfg["osm_zoom_level_adjust"] + 1.0) * 360.0 / delta)),
