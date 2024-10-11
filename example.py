@@ -16,7 +16,7 @@ route9 = Route("route_files/Super_Mario_Ebersberg.gpx", color='red', display_nam
 route3.compress(factor=100)
 route4.compress(factor=100)
 route5.compress(factor=30)
-route9.compress(factor=8)
+route9.compress(factor=3)
 
 # Plot whole route on a map
 plot_single_route(route7, output_file="example_map")
@@ -37,6 +37,8 @@ make_movie_with_dynamic_map(route5, map_frame_size_in_deg=0.2, final_zoomout=Tru
 # Make a movie of two routes together
 make_movie_with_multiple_routes([route3, route4], dynamic_frame=True, use_real_time=True, final_zoomout=False,
                                 output_file="race_movie_Budapest_Prague")
+
+# Note: video options, like framerate and length of the zoomout, can be adjusted in config.yaml
 
 t1 = time.time()
 print("\nFinished in %.1f seconds" % (t1 - t0))
