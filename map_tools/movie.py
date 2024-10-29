@@ -54,7 +54,7 @@ def make_movie_with_dynamic_map(
     progress_counter = 0
     nframes = len(route.latitude)
     frame_step = get_frame_step_from_real_time(route)
-    with writer.saving(fig, "output/" + output_file + ".mp4", 100):
+    with writer.saving(fig, "output/" + output_file + ".mp4", cfg["video_dpi_resolution"]):
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
             if i > 5:

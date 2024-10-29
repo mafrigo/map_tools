@@ -42,17 +42,19 @@ def plot_multiple_routes(
     total_length = 0
     total_elevation = 0
     total_time = 0
+    avg_speed = 0.
     for route in routes:
         plot_route_on_map(route, False)
         total_length += route.length[-1]
         total_elevation += route.elevation_gain[-1]
         total_time += route.time[-1]
+        avg_speed += route.length[-1] * np.nan_to_num(np.mean(route.speed[route.speed > 10.0]))
     add_data_to_bottom(
         extent,
         total_length,
         total_elevation,
         total_time,
-        0.,
+        avg_speed / total_length,
     )
     plt.axis("off")
     plt.tight_layout()
@@ -112,7 +114,7 @@ def get_frame_extent(
     return extent
 
 
-def get_frame_extent_multiple(routes: List[Route]) -> List[float]:
+def get_frame_extent_multiple(routes: List[Route], fixed_shape: bool = True) -> List[float]:
     extent = [1000.0, -1000.0, 1000.0, -1000.0]
     for route in routes:
         current_extent = get_frame_extent(route)
@@ -124,6 +126,16 @@ def get_frame_extent_multiple(routes: List[Route]) -> List[float]:
             extent[1] = current_extent[1]
         if current_extent[3] > extent[3]:
             extent[3] = current_extent[3]
+    if fixed_shape:
+        center_x = extent[0] + (extent[1] - extent[0])/2.
+        center_y = extent[2] + (extent[3] - extent[2])/2.
+        if extent[3] - extent[2] > 0.5 * (extent[1] - extent[0]):
+            extent[0] = center_x - 0.5 * (extent[3] - extent[2])
+            extent[1] = center_x + 0.5 * (extent[3] - extent[2])
+        else:
+            extent[2] = center_y - 0.25 * (extent[1] - extent[0])
+            extent[3] = center_y + 0.25 * (extent[1] - extent[0])
+        print(extent)
     return extent
 
 
