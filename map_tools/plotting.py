@@ -19,12 +19,19 @@ def plot_single_route(
         extent = get_frame_extent(route.full_route)
     create_background_map(extent)
     plot_route_on_map(route, color_segments)
+    moving_filter = route.speed > cfg["minimum_moving_speed"]
+    if len(route.speed[moving_filter]) > 0:
+        avg_speed = np.mean(route.speed[moving_filter])
+        moving_time = np.sum(route.time_intervals[moving_filter])
+    else:
+        avg_speed = 0
+        moving_time = 0
     add_data_to_bottom(
         extent,
         route.length[-1],
         route.elevation_gain[-1],
-        np.nan_to_num(np.sum(route.time_intervals[route.speed > cfg["minimum_moving_speed"]])),
-        np.nan_to_num(np.mean(route.speed[route.speed > cfg["minimum_moving_speed"]])),
+        moving_time,
+        avg_speed,
     )
     plt.axis("off")
     plt.tight_layout()
@@ -94,16 +101,15 @@ def get_frame_extent(
     else:
         if center_on == "frame":
             center = [
-                np.min(route.longitude)
-                + 0.5 * (np.max(route.longitude) - np.min(route.longitude)),
-                np.min(route.latitude)
-                + 0.5 * (np.max(route.latitude) - np.min(route.latitude)),
+                np.min(route.longitude) + 0.5 * (np.max(route.longitude) - np.min(route.longitude)),
+                np.min(route.latitude) + 0.5 * (np.max(route.latitude) - np.min(route.latitude)),
             ]
         elif center_on == "last":
             center = [route.longitude[-1], route.latitude[-1]]
         elif center_on == "last_smooth":
-            center = [np.mean(route.longitude[-cfg["frames_per_second"]:-1]),
-                      np.mean(route.latitude[-cfg["frames_per_second"]:-1])]
+            smoothing_nframes = np.min([cfg["frames_per_second"], route.max_index])
+            center = [np.mean(route.longitude[-smoothing_nframes:-1]),
+                      np.mean(route.latitude[-smoothing_nframes:-1])]
         else:
             raise IOError("Centering mode can only be last, frame, or last_smooth")
         extent = [

@@ -23,7 +23,7 @@ def plot_frame(
     extent: List[float] = list(),
     plot_background_map: bool = True,
     add_data: bool = True,
-    speed_moving_window: int = 50,  # TODO: make dependent on frame rate
+    speed_moving_window: int = 2*cfg["frames_per_second"],
 ) -> None:
     if len(extent) == 0:
         extent = get_frame_extent(route.full_route)
@@ -35,10 +35,10 @@ def plot_frame(
     if cfg["add_trail_to_movies"]:
         background_map.add_collection(get_trail(route))
     if add_data:
-        if len(route) > speed_moving_window:
-            speed = np.round(np.mean(np.nan_to_num(route.speed[-speed_moving_window:-1])))
+        if route.max_index > 1:
+            speed = np.round(np.mean(route.speed[np.max([route.max_index-speed_moving_window, 0]):-1]))
         else:
-            speed = np.round(np.mean(np.nan_to_num(route.speed[0:-1])))
+            speed = 0
         add_data_to_bottom(
             extent,
             route.length[-1],

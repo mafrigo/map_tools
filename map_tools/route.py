@@ -92,13 +92,12 @@ class Route(object):
         time_array[1:] = self.time[1:] - self.time[:-1]
         return time_array
 
-    def get_avg_speed(self) -> np.ndarray:
-        return np.nan_to_num(self.length / (self.time / 3600.0))  # in km/h
+    def get_avg_speed(self) -> np.ndarray:  # in km/h
+        return np.divide(self.length, (self.time / 3600.0), out=np.zeros_like(self.length), where=self.time != 0)
 
-    def get_speed(self) -> np.ndarray:
-        return np.nan_to_num(
-            self.length_segments / (self.time_intervals / 3600.0)
-        )  # in km/h
+    def get_speed(self) -> np.ndarray:  # in km/h
+        return np.divide(self.length_segments, (self.time_intervals / 3600.0), out=np.zeros_like(self.length),
+                         where=self.time_intervals != 0)
 
     def get_route_segments(self, minimum_speed_for_segment: float = 10.0) -> np.ndarray:
         is_segment = np.zeros(self.n_gps_entries)
