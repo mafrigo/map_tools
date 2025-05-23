@@ -102,7 +102,8 @@ def get_frame_extent(
         elif center_on == "last":
             center = [route.longitude[-1], route.latitude[-1]]
         elif center_on == "last_smooth":
-            center = [np.mean(route.longitude[-5:-1]), np.mean(route.latitude[-5:-1])]
+            center = [np.mean(route.longitude[-cfg["frames_per_second"]:-1]),
+                      np.mean(route.latitude[-cfg["frames_per_second"]:-1])]
         else:
             raise IOError("Centering mode can only be last, frame, or last_smooth")
         extent = [

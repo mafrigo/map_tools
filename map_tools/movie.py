@@ -57,7 +57,7 @@ def make_movie_with_dynamic_map(
     with writer.saving(fig, "output/" + output_file + ".mp4", cfg["video_dpi_resolution"]):
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
-            if i > 5:
+            if i > cfg["frames_per_second"]:
                 extent = get_frame_extent(
                     subroute, fixed_size=map_frame_size_in_deg, center_on="last_smooth"
                 )
