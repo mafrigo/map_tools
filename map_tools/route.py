@@ -31,13 +31,16 @@ class Route(object):
         file: str = "",
         color: str = cfg["default_route_color"],
         display_name: str = "",
-        time_delay: int = 0
+        time_delay: int = 0,
+        auto_compress: bool = True,
     ) -> None:
-        if len(file) > 0:
-            self.route_from_file(file, time_delay)
         self.full_route = self
         self.color = color
         self.display_name = display_name
+        if len(file) > 0:
+            self.route_from_file(file, time_delay)
+            if auto_compress:
+                self.compress()
 
     def route_from_file(self, file: str, time_delay: int = 0) -> None:
         self.file = file
@@ -173,33 +176,39 @@ class Route(object):
     def set_display_name(self, display_name: str) -> None:
         self.display_name = display_name
 
-    def compress(self, factor=0):
-        if factor==0:
-            factor=10
-        for attr in [
-            "latitude",
-            "longitude",
-            "altitude",
-            "length_segments",
-            "time_intervals",
-            "speed",
-            "avg_speed",
-            "route_segment_id",
-            "time",
-            "length",
-            "elevation_gain",
-        ]:
-            setattr(
-                self,
-                attr,
-                getattr(self, attr)[::factor]
-            )
-        self.n_gps_entries = len(self.latitude)
-        self.max_index = self.n_gps_entries
-        self.time_intervals = self.get_time_intervals()
-        self.length_segments = self.get_length_segments()
-        self.avg_timestep = np.median(self.time_intervals)
-        self.frame_step = self.frame_step
+    def compress(self, factor: int = 0):
+        if factor == 0:
+            #factor = cfg["frames_per_second"]*self.max_index/1  # 10
+            real_seconds_per_frame = cfg["real_seconds_per_video_second"] / cfg["frames_per_second"]
+            total_needed_frames = self.time[-1]/ real_seconds_per_frame
+            factor = int(self.max_index / total_needed_frames)
+        if factor > 1:
+            for attr in [
+                "latitude",
+                "longitude",
+                "altitude",
+                "length_segments",
+                "time_intervals",
+                "speed",
+                "avg_speed",
+                "route_segment_id",
+                "time",
+                "length",
+                "elevation_gain",
+            ]:
+                setattr(
+                    self,
+                    attr,
+                    getattr(self, attr)[::factor]
+                )
+            self.n_gps_entries = len(self.latitude)
+            self.max_index = self.n_gps_entries
+            self.time_intervals = self.get_time_intervals()
+            self.length_segments = self.get_length_segments()
+            self.avg_timestep = np.median(self.time_intervals)
+            self.frame_step = self.frame_step
+        else:
+            print("No route compression possible for " + self.file)
 
 
 def add_routes(route1: Route, route2: Route) -> Route:
