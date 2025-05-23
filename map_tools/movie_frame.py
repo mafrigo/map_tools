@@ -25,6 +25,7 @@ def plot_frame(
     add_data: bool = True,
     speed_moving_window: int = 2*cfg["frames_per_second"],
     include_trail: bool = True,
+    zorder_modifier: int = 0,
 ) -> None:
     if len(extent) == 0:
         extent = get_frame_extent(route.full_route)
@@ -32,7 +33,7 @@ def plot_frame(
         background_map = create_background_map(extent)
     plot_route_on_map(route, False)
     if route.display_name is not None and route.display_name != "":
-        plot_name_icon(route)
+        plot_name_icon(route, zorder_modifier)
     if cfg["add_trail_to_movies"] and include_trail:
         plt.gca().add_collection(get_trail(route))
     if add_data:
@@ -54,13 +55,13 @@ def plot_frame(
         plt.clf()
 
 
-def plot_name_icon(route: Route) -> None:
+def plot_name_icon(route: Route, zorder_modifier: int = 0) -> None:
     icon_size = 80 if len(route.display_name) <= 1 else 140
     plt.scatter(
         route.longitude[-1],
         route.latitude[-1],
         icon_size,
-        zorder=9,
+        zorder=9 + zorder_modifier,
         transform=ccrs.PlateCarree(),
         facecolor="w",
         edgecolor=route.color,
@@ -72,7 +73,7 @@ def plot_name_icon(route: Route) -> None:
         color=cfg["text_color"],
         fontsize="x-small",
         transform=ccrs.PlateCarree(),
-        zorder=10,
+        zorder=10 + zorder_modifier,
         horizontalalignment="center",
         verticalalignment="center_baseline",
     )

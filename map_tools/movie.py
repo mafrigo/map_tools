@@ -162,6 +162,7 @@ def make_movie_with_multiple_routes(
                         routes_to_be_plotted, min_size_in_deg=min_map_frame_size_in_deg
                     )
                 create_background_map(extent)
+                route_counter = 0
                 for subroute in routes_to_be_plotted:
                     plot_frame(
                         subroute,
@@ -169,8 +170,10 @@ def make_movie_with_multiple_routes(
                         extent=extent,
                         plot_background_map=False,
                         add_data=False,
+                        zorder_modifier=2*route_counter,
                     )
                     del subroute
+                    route_counter += 1
                 plt.text(
                     extent[0] + 0.5 * (extent[1] - extent[0]),
                     extent[2] - 0.026 * (extent[3] - extent[2]),
@@ -197,6 +200,7 @@ def make_movie_with_multiple_routes(
                     for j in range(len(initial_extent))
                 ]
                 create_background_map(current_extent)
+                route_counter = 0
                 for route in routes:
                     plot_frame(
                         route,
@@ -205,7 +209,9 @@ def make_movie_with_multiple_routes(
                         plot_background_map=False,
                         add_data=False,
                         include_trail=False,
+                        zorder_modifier=2*route_counter,
                     )
+                    route_counter += 1
                 writer.grab_frame()
                 plt.clf()
                 progress_counter += 1
@@ -216,6 +222,7 @@ def make_movie_with_multiple_routes(
                 )
             for i in range(cfg["still_final_seconds"] * cfg["frames_per_second"]):
                 create_background_map(final_extent)
+                route_counter = 0
                 for route in routes:
                     plot_frame(
                         route,
@@ -224,7 +231,9 @@ def make_movie_with_multiple_routes(
                         plot_background_map=False,
                         add_data=False,
                         include_trail=False,
+                        zorder_modifier=2*route_counter,
                     )
+                    route_counter += 1
                 writer.grab_frame()
                 plt.clf()
                 progress_counter += 1

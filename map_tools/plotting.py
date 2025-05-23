@@ -145,7 +145,6 @@ def get_frame_extent_multiple(routes: List[Route], fixed_shape: bool = True, smo
         else:
             extent[2] = center_y - 0.25 * (extent[1] - extent[0])
             extent[3] = center_y + 0.25 * (extent[1] - extent[0])
-        print(extent)
     return extent
 
 
