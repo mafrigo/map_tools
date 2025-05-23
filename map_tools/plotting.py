@@ -121,10 +121,13 @@ def get_frame_extent(
     return extent
 
 
-def get_frame_extent_multiple(routes: List[Route], fixed_shape: bool = True) -> List[float]:
+def get_frame_extent_multiple(routes: List[Route], fixed_shape: bool = True, smooth: bool = True) -> List[float]:
     extent = [1000.0, -1000.0, 1000.0, -1000.0]
     for route in routes:
-        current_extent = get_frame_extent(route)
+        if not smooth:
+            current_extent = get_frame_extent(route, center_on="frame")
+        else:
+            current_extent = get_frame_extent(route, center_on="last_smooth")
         if current_extent[0] < extent[0]:
             extent[0] = current_extent[0]
         if current_extent[2] < extent[2]:

@@ -33,7 +33,7 @@ def plot_frame(
     if route.display_name is not None and route.display_name != "":
         plot_name_icon(route)
     if cfg["add_trail_to_movies"]:
-        background_map.add_collection(get_trail(route))
+        plt.gca().add_collection(get_trail(route))
     if add_data:
         if route.max_index > 1:
             speed = np.round(np.mean(route.speed[np.max([route.max_index-speed_moving_window, 0]):-1]))
