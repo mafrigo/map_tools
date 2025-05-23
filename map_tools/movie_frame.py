@@ -103,22 +103,11 @@ def get_dynamic_frame_extent_for_multiple_routes(
 
 
 def get_trail(route: Route) -> LineCollection:
-    route_length = route.max_index
-    alpha = np.zeros(route_length)
-    trail_length = int(0.05 * route_length)
-    if route.max_index > trail_length:
-        alpha[route.max_index - trail_length : route.max_index] = np.arange(
-            trail_length
-        ).astype(float) / float(trail_length)
-    else:
-        alpha[0 : route.max_index] = np.arange(route.max_index).astype(float) / float(
-            route.max_index
-        )
+    trail_length = 2 * cfg["frames_per_second"]
+    alpha = np.arange(np.min([trail_length, route.max_index]))
     colorfade = colors.to_rgb(route.color) + (0.0,)
     cmap = colors.LinearSegmentedColormap.from_list("my", [colorfade, route.color])
-    points = np.vstack((route.longitude, route.latitude)).T.reshape(-1, 1, 2)
+    points = np.vstack((route.longitude[-trail_length:-1], route.latitude[-trail_length:-1])).T.reshape(-1, 1, 2)
     segments = np.hstack((points[:-1], points[1:]))
-    lc = LineCollection(
-        segments, lw=3, zorder=8, transform=ccrs.PlateCarree(), array=alpha, cmap=cmap
-    )
+    lc = LineCollection(segments, lw=3, zorder=8, transform=ccrs.PlateCarree(), array=alpha, cmap=cmap)
     return lc

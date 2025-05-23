@@ -8,7 +8,7 @@ osm_zoom_level_adjust: 2. #2. #1.2
 default_route_color: r
 route_thickness: 1
 text_color: black
-add_trail_to_movies: False #slows down computation quite a lot
+add_trail_to_movies: True
 fontsize_small: 10
 fontsize_large: 12
 image_dpi_resolution: 400
