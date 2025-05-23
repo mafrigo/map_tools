@@ -23,8 +23,8 @@ def plot_single_route(
         extent,
         route.length[-1],
         route.elevation_gain[-1],
-        np.nan_to_num(np.sum(route.time_intervals[route.speed > 10.0])),
-        np.nan_to_num(np.mean(route.speed[route.speed > 10.0])),
+        np.nan_to_num(np.sum(route.time_intervals[route.speed > cfg["minimum_moving_speed"]])),
+        np.nan_to_num(np.mean(route.speed[route.speed > cfg["minimum_moving_speed"]])),
     )
     plt.axis("off")
     plt.tight_layout()
@@ -48,7 +48,7 @@ def plot_multiple_routes(
         total_length += route.length[-1]
         total_elevation += route.elevation_gain[-1]
         total_time += route.time[-1]
-        avg_speed += route.length[-1] * np.nan_to_num(np.mean(route.speed[route.speed > 10.0]))
+        avg_speed += route.length[-1] * np.nan_to_num(np.mean(route.speed[route.speed > cfg["minimum_moving_speed"]]))
     add_data_to_bottom(
         extent,
         total_length,
