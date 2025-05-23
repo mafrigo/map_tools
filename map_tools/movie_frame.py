@@ -24,6 +24,7 @@ def plot_frame(
     plot_background_map: bool = True,
     add_data: bool = True,
     speed_moving_window: int = 2*cfg["frames_per_second"],
+    include_trail: bool = True,
 ) -> None:
     if len(extent) == 0:
         extent = get_frame_extent(route.full_route)
@@ -32,7 +33,7 @@ def plot_frame(
     plot_route_on_map(route, False)
     if route.display_name is not None and route.display_name != "":
         plot_name_icon(route)
-    if cfg["add_trail_to_movies"]:
+    if cfg["add_trail_to_movies"] and include_trail:
         plt.gca().add_collection(get_trail(route))
     if add_data:
         if route.max_index > 1:

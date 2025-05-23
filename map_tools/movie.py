@@ -81,7 +81,7 @@ def make_movie_with_dynamic_map(
                     * (final_extent[j] - initial_extent[j])
                     for j in range(len(initial_extent))
                 ]
-                plot_frame(route, writer, extent=current_extent)
+                plot_frame(route, writer, extent=current_extent, include_trail=False)
                 progress_counter += 1
                 update_progress_bar(
                     progress_counter,
@@ -89,7 +89,7 @@ def make_movie_with_dynamic_map(
                     + cfg["still_final_seconds"] * cfg["frames_per_second"],
                 )
             for i in range(cfg["still_final_seconds"] * cfg["frames_per_second"]):
-                plot_frame(route, writer, extent=final_extent)
+                plot_frame(route, writer, extent=final_extent, include_trail=False)
                 progress_counter += 1
                 update_progress_bar(
                     progress_counter,
@@ -204,6 +204,7 @@ def make_movie_with_multiple_routes(
                         extent=current_extent,
                         plot_background_map=False,
                         add_data=False,
+                        include_trail=False,
                     )
                 writer.grab_frame()
                 plt.clf()
@@ -222,6 +223,7 @@ def make_movie_with_multiple_routes(
                         extent=final_extent,
                         plot_background_map=False,
                         add_data=False,
+                        include_trail=False,
                     )
                 writer.grab_frame()
                 plt.clf()
