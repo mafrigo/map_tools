@@ -80,13 +80,14 @@ def plot_name_icon(route: Route, zorder_modifier: int = 0) -> None:
 
 
 def get_dynamic_frame_extent_for_multiple_routes(
-    subroutes: List[Route], min_size_in_deg: float = cfg["default_min_frame_size_in_deg"]
+    subroutes: List[Route], min_size_in_deg: float = cfg["default_min_frame_size_in_deg"], smooth=True
 ) -> List[float]:
     mean_point_between_routes = [0.0, 0.0]
     max_distance = min_size_in_deg
+    smoothing_window = np.min([cfg["frames_per_second"], subroutes[0].max_index])
     for subroute in subroutes:
-        mean_point_between_routes[0] += subroute.longitude[-1] / len(subroutes)
-        mean_point_between_routes[1] += subroute.latitude[-1] / len(subroutes)
+        mean_point_between_routes[0] += np.mean(subroute.longitude[-smoothing_window:-1]) / len(subroutes)
+        mean_point_between_routes[1] += np.mean(subroute.latitude[-smoothing_window:-1]) / len(subroutes)
     for subroute in subroutes:
         distance_to_mean_point = np.sqrt(
             (mean_point_between_routes[0] - subroute.longitude[-1]) ** 2
@@ -94,13 +95,13 @@ def get_dynamic_frame_extent_for_multiple_routes(
         )
         if distance_to_mean_point > max_distance:
             max_distance = distance_to_mean_point
+    map_horizontal_size = 2 * max_distance * (1.0 + cfg["map_extent_adjust"])
+    map_vertical_size = max_distance * (1.0 + cfg["map_extent_adjust"])
     return [
-        mean_point_between_routes[0]
-        - 2 * max_distance * (1.0 + cfg["map_extent_adjust"]),
-        mean_point_between_routes[0]
-        + 2 * max_distance * (1.0 + cfg["map_extent_adjust"]),
-        mean_point_between_routes[1] - max_distance * (1.0 + cfg["map_extent_adjust"]),
-        mean_point_between_routes[1] + max_distance * (1.0 + cfg["map_extent_adjust"]),
+        mean_point_between_routes[0] - map_horizontal_size,
+        mean_point_between_routes[0] + map_horizontal_size,
+        mean_point_between_routes[1] - map_vertical_size,
+        mean_point_between_routes[1] + map_vertical_size,
     ]
 
 
