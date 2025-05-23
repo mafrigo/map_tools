@@ -128,7 +128,7 @@ def make_movie_with_multiple_routes(
     if not dynamic_frame:
         extent = get_frame_extent_multiple(routes)
     current_frame = 0
-    with writer.saving(fig, "output/" + output_file + ".mp4", 100):
+    with writer.saving(fig, "output/" + output_file + ".mp4", cfg["video_dpi_resolution"]):
         while False in routes_finished:
             current_frame += 1
             if use_real_time:
