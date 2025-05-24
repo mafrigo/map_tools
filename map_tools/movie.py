@@ -7,6 +7,7 @@ from .plotting import get_frame_extent, get_frame_extent_multiple, create_backgr
 from .movie_frame import plot_frame, get_dynamic_frame_extent_for_multiple_routes
 from .config import get_yaml_config
 from .route import Route
+import cartopy.crs as ccrs
 
 cfg = get_yaml_config()
 
@@ -26,7 +27,7 @@ def init_movie(output_file: str) -> Tuple[plt.Figure, mani.FFMpegWriter]:
 
 
 def make_movie_with_static_map(
-    route: Route, output_file: str = "movie"
+        route: Route, output_file: str = "movie"
 ) -> None:
     fig, writer = init_movie(output_file)
     progress_counter = 0
@@ -45,10 +46,10 @@ def make_movie_with_static_map(
 
 
 def make_movie_with_dynamic_map(
-    route: Route,
-    map_frame_size_in_deg: float = 0.1,
-    output_file: str = "movie",
-    final_zoomout: bool = True,
+        route: Route,
+        map_frame_size_in_deg: float = 0.1,
+        output_file: str = "movie",
+        final_zoomout: bool = True,
 ) -> None:
     fig, writer = init_movie(output_file)
     progress_counter = 0
@@ -99,26 +100,25 @@ def make_movie_with_dynamic_map(
 
 
 def make_movie_with_multiple_routes(
-    routes: List[Route],
-    min_map_frame_size_in_deg: float = cfg["default_min_frame_size_in_deg"],
-    dynamic_frame: bool = True,
-    use_real_time: bool = True,
-    output_file: str = "race_movie",
-    final_zoomout: bool = True,
+        routes: List[Route],
+        min_map_frame_size_in_deg: float = cfg["default_min_frame_size_in_deg"],
+        dynamic_frame: bool = True,
+        use_real_time: bool = True,
+        output_file: str = "race_movie",
+        final_zoomout: bool = True,
 ) -> None:
-    import cartopy.crs as ccrs
     fig, writer = init_movie(output_file)
     progress_counter = 0
     nframes = 0
     current_time_in_seconds = 0
-    routes_finished = [False]*len(routes)
-    routes_paused = [False]*len(routes)
-    previous_frame_index = [0]*len(routes)
+    routes_finished = [False] * len(routes)
+    routes_paused = [False] * len(routes)
+    previous_frame_index = [0] * len(routes)
     current_subroutes = [route[0:1] for route in routes]
     if use_real_time:
         for route in routes:
-            if route.time[-1]/(cfg["real_seconds_per_video_second"]/cfg["frames_per_second"]) > nframes:
-                nframes = route.time[-1]/(cfg["real_seconds_per_video_second"]/cfg["frames_per_second"])
+            if route.time[-1] / (cfg["real_seconds_per_video_second"] / cfg["frames_per_second"]) > nframes:
+                nframes = route.time[-1] / (cfg["real_seconds_per_video_second"] / cfg["frames_per_second"])
     else:
         for route in routes:
             route.frame_step = get_frame_step_from_real_time(route)
@@ -132,7 +132,7 @@ def make_movie_with_multiple_routes(
         while False in routes_finished:
             current_frame += 1
             if use_real_time:
-                current_time_in_seconds += cfg["real_seconds_per_video_second"]/cfg["frames_per_second"]
+                current_time_in_seconds += cfg["real_seconds_per_video_second"] / cfg["frames_per_second"]
             routes_to_be_plotted = []
             for route_id in range(len(routes)):
                 route = routes[route_id]
@@ -154,7 +154,7 @@ def make_movie_with_multiple_routes(
                 if frame_index >= len(route):
                     routes_finished[route_id] = True
                 if frame_index > 0:
-                    current_subroutes[route_id] = route[0 : frame_index]
+                    current_subroutes[route_id] = route[0: frame_index]
                 routes_to_be_plotted.append(current_subroutes[route_id])
             if False in routes_paused:
                 if dynamic_frame:
@@ -170,19 +170,11 @@ def make_movie_with_multiple_routes(
                         extent=extent,
                         plot_background_map=False,
                         add_data=False,
-                        zorder_modifier=2*route_counter,
+                        zorder_modifier=2 * route_counter,
                     )
                     del subroute
                     route_counter += 1
-                plt.text(
-                    extent[0] + 0.5 * (extent[1] - extent[0]),
-                    extent[2] - 0.026 * (extent[3] - extent[2]),
-                    "Minutes: %i" % (current_time_in_seconds/60.),
-                    color=cfg["text_color"],
-                    transform=ccrs.PlateCarree(),
-                    horizontalalignment="center",
-                    fontsize=8
-                )
+                plot_global_time(extent, current_time_in_seconds)
                 writer.grab_frame()
                 plt.clf()
                 progress_counter += 1
@@ -209,7 +201,7 @@ def make_movie_with_multiple_routes(
                         plot_background_map=False,
                         add_data=False,
                         include_trail=False,
-                        zorder_modifier=2*route_counter,
+                        zorder_modifier=2 * route_counter,
                     )
                     route_counter += 1
                 writer.grab_frame()
@@ -231,7 +223,7 @@ def make_movie_with_multiple_routes(
                         plot_background_map=False,
                         add_data=False,
                         include_trail=False,
-                        zorder_modifier=2*route_counter,
+                        zorder_modifier=2 * route_counter,
                     )
                     route_counter += 1
                 writer.grab_frame()
@@ -270,3 +262,18 @@ def update_progress_bar(progress_counter: int, nframes: int, frame_step: int = 1
         )
     )
     sys.stdout.flush()
+
+
+def plot_global_time(extent: List[float], current_time_in_seconds: int):
+    days = int(current_time_in_seconds / (24. * 60. * 60.))
+    hours = int((current_time_in_seconds - days * 24. * 60. * 60.) / (60. * 60.))
+    minutes = int((current_time_in_seconds - days * 24. * 60. * 60. - hours * 60. * 60.) / 60.)
+    plt.text(
+        extent[0] + 0.5 * (extent[1] - extent[0]),
+        extent[2] - 0.026 * (extent[3] - extent[2]),
+        "%i days %i hours %i minutes" % (days, hours, minutes),
+        color=cfg["text_color"],
+        transform=ccrs.PlateCarree(),
+        horizontalalignment="center",
+        fontsize=8
+    )
