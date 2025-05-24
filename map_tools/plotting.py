@@ -134,14 +134,18 @@ def get_frame_extent_multiple(routes: List[Route], fixed_shape: bool = True) -> 
         if current_extent[3] > extent[3]:
             extent[3] = current_extent[3]
     if fixed_shape:
-        center_x = extent[0] + (extent[1] - extent[0])/2.
-        center_y = extent[2] + (extent[3] - extent[2])/2.
-        if extent[3] - extent[2] > 0.5 * (extent[1] - extent[0]):
-            extent[0] = center_x - 0.5 * (extent[3] - extent[2])
-            extent[1] = center_x + 0.5 * (extent[3] - extent[2])
+        horizontal_size = extent[1] - extent[0]
+        vertical_size = extent[3] - extent[2]
+        center_x = extent[0] + horizontal_size/2.
+        center_y = extent[2] + vertical_size/2.
+        if horizontal_size < 2 * vertical_size:
+            new_horizontal_size = vertical_size * 2
+            extent[0] = center_x - 0.5 * new_horizontal_size
+            extent[1] = center_x + 0.5 * new_horizontal_size
         else:
-            extent[2] = center_y - 0.25 * (extent[1] - extent[0])
-            extent[3] = center_y + 0.25 * (extent[1] - extent[0])
+            new_vertical_size = horizontal_size * 0.5
+            extent[2] = center_y - 0.5 * new_vertical_size
+            extent[3] = center_y + 0.5 * new_vertical_size
     return extent
 
 
