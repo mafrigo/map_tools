@@ -1,10 +1,10 @@
 ffmpeg_path: 'C:\Users\mfrigo\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe'
-frames_per_second: 2 #30
-real_seconds_per_video_second: 8000 #800
+frames_per_second: 30
+real_seconds_per_video_second: 800
 movie_zoomout_seconds: 3
 still_final_seconds: 3
 map_extent_adjust: 0.2
-osm_zoom_level_adjust: 2. #2. #1.2
+osm_zoom_level_adjust: 2.
 default_route_color: r
 route_thickness: 1
 text_color: black
