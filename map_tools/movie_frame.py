@@ -18,14 +18,14 @@ cfg = get_yaml_config()
 
 
 def plot_frame(
-    route: Route,
-    ffmpeg_writer: mani.FFMpegWriter,
-    extent: List[float] = list(),
-    plot_background_map: bool = True,
-    add_data: bool = True,
-    speed_moving_window: int = 2*cfg["frames_per_second"],
-    include_trail: bool = True,
-    zorder_modifier: int = 0,
+        route: Route,
+        ffmpeg_writer: mani.FFMpegWriter,
+        extent: List[float] = list(),
+        plot_background_map: bool = True,
+        add_data: bool = True,
+        speed_moving_window: int = 2 * cfg["frames_per_second"],
+        include_trail: bool = True,
+        zorder_modifier: int = 0,
 ) -> None:
     if len(extent) == 0:
         extent = get_frame_extent(route.full_route)
@@ -38,7 +38,7 @@ def plot_frame(
         plt.gca().add_collection(get_trail(route))
     if add_data:
         if route.max_index > 1:
-            speed = np.round(np.mean(route.speed[np.max([route.max_index-speed_moving_window, 0]):-1]))
+            speed = np.round(np.mean(route.speed[np.max([route.max_index - speed_moving_window, 0]):-1]))
         else:
             speed = 0
         add_data_to_bottom(
@@ -80,14 +80,13 @@ def plot_name_icon(route: Route, zorder_modifier: int = 0) -> None:
 
 
 def get_dynamic_frame_extent_for_multiple_routes(
-    subroutes: List[Route], min_size_in_deg: float = cfg["default_min_frame_size_in_deg"], smooth=True
-) -> List[float]:
+        subroutes: List[Route], min_size_in_deg: float = cfg["default_min_frame_size_in_deg"]) -> List[float]:
     mean_point_between_routes = [0.0, 0.0]
     max_distance = min_size_in_deg
-    smoothing_window = np.min([cfg["frames_per_second"], subroutes[0].max_index])
+    smoothing_window = np.min([cfg["frames_per_second"], np.min([sr.max_index for sr in subroutes])])
     for subroute in subroutes:
-        mean_point_between_routes[0] += np.mean(subroute.longitude[-smoothing_window:-1]) / len(subroutes)
-        mean_point_between_routes[1] += np.mean(subroute.latitude[-smoothing_window:-1]) / len(subroutes)
+        mean_point_between_routes[0] += np.mean(subroute.longitude[-smoothing_window:]) / len(subroutes)
+        mean_point_between_routes[1] += np.mean(subroute.latitude[-smoothing_window:]) / len(subroutes)
     for subroute in subroutes:
         distance_to_mean_point = np.sqrt(
             (mean_point_between_routes[0] - subroute.longitude[-1]) ** 2
