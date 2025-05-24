@@ -35,7 +35,7 @@ def make_movie_with_static_map(
     frame_step = get_frame_step_from_real_time(route)
     print("Using frame step: " + str(frame_step))
     extent = get_frame_extent(route.full_route)
-    with writer.saving(fig, "output/" + output_file + ".mp4", 100):
+    with writer.saving(fig, "output/" + output_file + ".mp4", cfg["video_dpi_resolution"]):
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
             plot_frame(subroute, writer, extent=extent)
