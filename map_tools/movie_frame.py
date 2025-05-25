@@ -23,9 +23,10 @@ def plot_frame(
         extent: List[float] = list(),
         plot_background_map: bool = True,
         add_data: bool = True,
-        speed_moving_window: int = 2 * cfg["frames_per_second"],
+        speed_moving_window: int = 4 * cfg["frames_per_second"],
         include_trail: bool = True,
         zorder_modifier: int = 0,
+        show_avg_speed: bool = False,
 ) -> None:
     if len(extent) == 0:
         extent = get_frame_extent(route.full_route)
@@ -38,7 +39,10 @@ def plot_frame(
         plt.gca().add_collection(get_trail(route))
     if add_data:
         if route.max_index > 1:
-            speed = np.round(np.mean(route.speed[np.max([route.max_index - speed_moving_window, 0]):-1]))
+            if not show_avg_speed:
+                speed = np.round(np.mean(route.speed[np.max([route.max_index - speed_moving_window, 0]):-1]))
+            else:
+                speed = np.mean(route.speed[route.speed > cfg["minimum_moving_speed"]])
         else:
             speed = 0
         add_data_to_bottom(
