@@ -1,0 +1,6 @@
+workingfile.py
+route_files/*
+output/*
+.idea/*
+map_tools/__pycache__/*
+tests/__pycache__/*
