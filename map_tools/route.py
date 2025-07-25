@@ -32,7 +32,7 @@ class Route(object):
         color: str = cfg["default_route_color"],
         display_name: str = "",
         time_delay: int = 0,
-        auto_compress: bool = True,
+        auto_compress: bool = False,
     ) -> None:
         self.full_route = self
         self.color = color
@@ -176,11 +176,14 @@ class Route(object):
     def set_display_name(self, display_name: str) -> None:
         self.display_name = display_name
 
-    def compress(self, factor: int = 0):
+    def calculate_compression_factor(self, real_seconds_per_video_second: float = 150.0) -> int:
+        real_seconds_per_frame = real_seconds_per_video_second / cfg["frames_per_second"]
+        total_needed_frames = self.time[-1] / real_seconds_per_frame
+        return int(1.5 * self.max_index / total_needed_frames)
+
+    def compress(self, factor: int = 0, real_seconds_per_video_second: float = 150.0):
         if factor == 0:
-            real_seconds_per_frame = cfg["real_seconds_per_video_second"] / cfg["frames_per_second"]
-            total_needed_frames = self.time[-1] / real_seconds_per_frame
-            factor = int(1.5 * self.max_index / total_needed_frames)
+            factor = self.calculate_compression_factor(real_seconds_per_video_second)
             print("Auto-compressing by factor ", factor)
         if factor > 1:
             for attr in [

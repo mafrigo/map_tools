@@ -15,7 +15,7 @@ route9 = Route("route_files/Super_Mario_Ebersberg.gpx", color='red', display_nam
 # Compress big routes to speed up computation
 route3.compress(factor=100)
 route4.compress(factor=100)
-route5.compress(factor=30)
+route5.compress(real_seconds_per_video_second=1000) # compress enough that each video frame has one corresponding gps entry.
 route9.compress(factor=3)
 
 # Plot whole route on a map
@@ -32,7 +32,8 @@ plot_multiple_routes([route3, route4], output_file="Prague_and_Budapest")
 make_movie_with_static_map(route9, output_file="static_movie_Mario")
 
 # Make a movie of the route on a zoomed-in moving map, with zoom-out at the end
-make_movie_with_dynamic_map(route5, map_frame_size_in_deg=0.2, final_zoomout=True, output_file="dynamic_movie_Seefeld")
+make_movie_with_dynamic_map(route5, map_frame_size_in_deg=0.2, final_zoomout=True, 
+                            output_file="dynamic_movie_Seefeld", real_seconds_per_video_second=1000)
 
 # Make a movie of two routes together
 make_movie_with_multiple_routes([route3, route4], dynamic_frame=True, use_real_time=True, final_zoomout=False,

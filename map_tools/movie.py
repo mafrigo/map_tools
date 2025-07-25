@@ -27,12 +27,14 @@ def init_movie(output_file: str) -> Tuple[plt.Figure, mani.FFMpegWriter]:
 
 
 def make_movie_with_static_map(
-        route: Route, output_file: str = "movie"
+        route: Route,
+        output_file: str = "movie",
+        real_seconds_per_video_second: float = 150.0
 ) -> None:
     fig, writer = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
-    frame_step = get_frame_step_from_real_time(route)
+    frame_step = get_frame_step_from_real_time(route, real_seconds_per_video_second)
     print("Using frame step: " + str(frame_step))
     extent = get_frame_extent(route.full_route)
     with writer.saving(fig, "output/" + output_file + ".mp4", cfg["video_dpi_resolution"]):
@@ -50,11 +52,12 @@ def make_movie_with_dynamic_map(
         map_frame_size_in_deg: float = 0.1,
         output_file: str = "movie",
         final_zoomout: bool = True,
+        real_seconds_per_video_second: float = 150.0
 ) -> None:
     fig, writer = init_movie(output_file)
     progress_counter = 0
     nframes = len(route.latitude)
-    frame_step = get_frame_step_from_real_time(route)
+    frame_step = get_frame_step_from_real_time(route, real_seconds_per_video_second)
     with writer.saving(fig, "output/" + output_file + ".mp4", cfg["video_dpi_resolution"]):
         for i in range(1, nframes, frame_step):
             subroute = route[0:i]
@@ -106,6 +109,7 @@ def make_movie_with_multiple_routes(
         use_real_time: bool = True,
         output_file: str = "race_movie",
         final_zoomout: bool = True,
+        real_seconds_per_video_second: float = 150.0
 ) -> None:
     fig, writer = init_movie(output_file)
     progress_counter = 0
@@ -117,11 +121,11 @@ def make_movie_with_multiple_routes(
     current_subroutes = [route[0:1] for route in routes]
     if use_real_time:
         for route in routes:
-            if route.time[-1] / (cfg["real_seconds_per_video_second"] / cfg["frames_per_second"]) > nframes:
-                nframes = route.time[-1] / (cfg["real_seconds_per_video_second"] / cfg["frames_per_second"])
+            if route.time[-1] / (real_seconds_per_video_second / cfg["frames_per_second"]) > nframes:
+                nframes = route.time[-1] / (real_seconds_per_video_second / cfg["frames_per_second"])
     else:
         for route in routes:
-            route.frame_step = get_frame_step_from_real_time(route)
+            route.frame_step = get_frame_step_from_real_time(route, real_seconds_per_video_second)
             if len(route.latitude) / route.frame_step > nframes:
                 nframes = int(len(route.latitude) / route.frame_step)
 
@@ -132,7 +136,7 @@ def make_movie_with_multiple_routes(
         while False in routes_finished:
             current_frame += 1
             if use_real_time:
-                current_time_in_seconds += cfg["real_seconds_per_video_second"] / cfg["frames_per_second"]
+                current_time_in_seconds += real_seconds_per_video_second / cfg["frames_per_second"]
             routes_to_be_plotted = []
             for route_id in range(len(routes)):
                 route = routes[route_id]
@@ -236,11 +240,11 @@ def make_movie_with_multiple_routes(
                 )
 
 
-def get_frame_step_from_real_time(route: Route) -> int:
+def get_frame_step_from_real_time(route: Route, real_seconds_per_video_second: float) -> int:
     # note: this only works if the timestep is constant; an interpolation approach would be more general
     try:
         frame_step = int(np.round(
-            cfg["real_seconds_per_video_second"]
+            real_seconds_per_video_second
             / (cfg["frames_per_second"] * route.avg_timestep)
         ))
     except OverflowError:
