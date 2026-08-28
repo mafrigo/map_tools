@@ -32,7 +32,7 @@ def plot_frame(
         extent = get_frame_extent(route.full_route)
     if plot_background_map:
         background_map = create_background_map(extent)
-    plot_route_on_map(route, False)
+    plot_route_on_map(route, False, cut_extent=extent)
     if route.display_name is not None and route.display_name != "":
         plot_name_icon(route, zorder_modifier)
     if cfg["add_trail_to_movies"] and include_trail:

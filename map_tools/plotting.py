@@ -158,7 +158,10 @@ def create_background_map(extent: List[float]) -> plt.Axes:
     return ax
 
 
-def plot_route_on_map(route: Route, color_segments: bool = False) -> None:
+def plot_route_on_map(route: Route, color_segments: bool = False, cut_extent: List[float] = None) -> None:
+    if cut_extent is not None:
+        route = route[route.length < route.length[-1] - (cut_extent[1]-cut_extent[0])]
+
     if color_segments:
         color_list = ["crimson", "g", "b"]
         route_colors = list(

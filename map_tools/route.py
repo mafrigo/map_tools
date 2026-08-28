@@ -179,7 +179,7 @@ class Route(object):
     def calculate_compression_factor(self, real_seconds_per_video_second: float = 150.0) -> int:
         real_seconds_per_frame = real_seconds_per_video_second / cfg["frames_per_second"]
         total_needed_frames = self.time[-1] / real_seconds_per_frame
-        return int(1.5 * self.max_index / total_needed_frames)
+        return int(2. * self.max_index / total_needed_frames) #1.5
 
     def compress(self, factor: int = 0, real_seconds_per_video_second: float = 150.0):
         if factor == 0:
