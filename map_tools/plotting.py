@@ -1,12 +1,98 @@
+import math
+import threading
+from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
+from typing import List
+
 import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as img_tiles
+from shapely import geometry as sgeom
 from .route import Route
 from .config import get_yaml_config
-from typing import List
 
 cfg = get_yaml_config()
+
+_osm_tiles = None
+_background_cache = OrderedDict()
+
+
+class CachedOSM(img_tiles.OSM):
+    """OSM tile source with an in-memory LRU cache on top of the disk cache.
+
+    Without this, cartopy re-reads and re-decodes every tile from disk on
+    every frame, even when the tile is fully cached.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._memory_cache = OrderedDict()
+        self._cache_lock = threading.Lock()
+
+    def is_cached(self, tile: tuple) -> bool:
+        return tile in self._memory_cache
+
+    def get_image(self, tile):
+        if tile in self._memory_cache:
+            with self._cache_lock:
+                self._memory_cache.move_to_end(tile)
+            return self._memory_cache[tile]
+        image = super().get_image(tile)
+        with self._cache_lock:
+            self._memory_cache[tile] = image
+            while len(self._memory_cache) > cfg.get("max_cached_tiles", 1000):
+                self._memory_cache.popitem(last=False)
+        return image
+
+
+def get_osm_tiles() -> CachedOSM:
+    global _osm_tiles
+    if _osm_tiles is None:
+        _osm_tiles = CachedOSM(cache=True)
+    return _osm_tiles
+
+
+def lonlat_to_tile_numbers(lon: float, lat: float, zoom: int) -> (float, float):
+    # standard slippy map tile numbering, y = 0 at the north pole
+    n_tiles = float(2 ** zoom)
+    x = (lon + 180.0) / 360.0 * n_tiles
+    lat_rad = math.radians(lat)
+    y = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n_tiles
+    return x, y
+
+
+def tile_number_y_to_lat(y: float, zoom: int) -> float:
+    n_tiles = float(2 ** zoom)
+    return math.degrees(math.atan(math.sinh(math.pi * (1.0 - 2.0 * y / n_tiles))))
+
+
+def prefetch_tiles(extents: List[List[float]]) -> None:
+    """Download all OSM tiles required for the given extents up front, in parallel.
+
+    This removes network latency from the render loop: afterwards every tile
+    request hits the in-memory cache.
+    """
+    osm = get_osm_tiles()
+    tiles = set()
+    for extent in extents:
+        deg_size = (extent[1] - extent[0]) / (1.0 + cfg["map_extent_adjust"])
+        zoom = get_zoom_level(deg_size)
+        x_min, y_top = lonlat_to_tile_numbers(extent[0], extent[3], zoom)
+        x_max, y_bottom = lonlat_to_tile_numbers(extent[1], extent[2], zoom)
+        for x in range(int(math.floor(x_min)), int(math.ceil(x_max))):
+            for y in range(int(math.floor(y_top)), int(math.ceil(y_bottom))):
+                tiles.add((x, y, zoom))
+    missing = sorted(tile for tile in tiles if not osm.is_cached(tile))
+    if len(missing) > 0:
+        def fetch_tile(tile):
+            try:
+                osm.get_image(tile)
+            except OSError:
+                pass
+
+        with ThreadPoolExecutor(max_workers=cfg.get("tile_prefetch_workers", 12)) as executor:
+            list(executor.map(fetch_tile, missing))
 
 
 def plot_single_route(
@@ -149,18 +235,54 @@ def get_frame_extent_multiple(routes: List[Route], fixed_shape: bool = True) -> 
     return extent
 
 
+def _fetch_stitched_tiles(osm: CachedOSM, tile_range: tuple) -> (np.ndarray, List[float]):
+    zoom, x_min, x_max, y_min, y_max = tile_range
+    n_tiles = float(2 ** zoom)
+    lon_min = x_min / n_tiles * 360.0 - 180.0
+    lon_max = x_max / n_tiles * 360.0 - 180.0
+    lat_max = tile_number_y_to_lat(y_min, zoom)
+    lat_min = tile_number_y_to_lat(y_max, zoom)
+    tile_box = osm.crs.project_geometry(
+        sgeom.box(lon_min, lat_min, lon_max, lat_max), ccrs.PlateCarree()
+    )
+    image, image_extent, _ = osm.image_for_domain(tile_box, zoom)
+    return image, image_extent
+
+
 def create_background_map(extent: List[float]) -> plt.Axes:
+    osm = get_osm_tiles()
     deg_size = (extent[1] - extent[0]) / (1.0 + cfg["map_extent_adjust"])
-    osm_request = img_tiles.OSM(cache=True)
-    ax = plt.axes(projection=osm_request.crs)
+    zoom = get_zoom_level(deg_size)
+    x_min, y_top = lonlat_to_tile_numbers(extent[0], extent[3], zoom)
+    x_max, y_bottom = lonlat_to_tile_numbers(extent[1], extent[2], zoom)
+    tile_range = (
+        zoom,
+        int(math.floor(x_min)), int(math.ceil(x_max)),
+        int(math.floor(y_top)), int(math.ceil(y_bottom)),
+    )
+    background = _background_cache.get(tile_range)
+    if background is not None:
+        _background_cache.move_to_end(tile_range)
+    else:
+        background = _fetch_stitched_tiles(osm, tile_range)
+        _background_cache[tile_range] = background
+        while len(_background_cache) > cfg.get("max_cached_background_maps", 200):
+            _background_cache.popitem(last=False)
+    image, image_extent = background
+    ax = plt.axes(projection=osm.crs)
     ax.set_extent(extent)
-    ax.add_image(osm_request, get_zoom_level(deg_size))
+    ax.imshow(image, extent=image_extent, origin="lower", transform=osm.crs)
     return ax
 
 
 def plot_route_on_map(route: Route, color_segments: bool = False, cut_extent: List[float] = None) -> None:
     if cut_extent is not None:
-        route = route[route.length < route.length[-1] - (cut_extent[1]-cut_extent[0])]
+        # route.length is monotonically increasing, so the points dropped by
+        # the cut form a prefix that can be found with a binary search
+        cutoff = route.length[-1] - (cut_extent[1] - cut_extent[0])
+        first_dropped_index = int(np.searchsorted(route.length, cutoff, side="left"))
+        if first_dropped_index > 0:
+            route = route[:first_dropped_index]
 
     if color_segments:
         color_list = ["crimson", "g", "b"]

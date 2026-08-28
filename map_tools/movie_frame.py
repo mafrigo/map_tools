@@ -53,7 +53,6 @@ def plot_frame(
             speed,
         )
     plt.axis("off")
-    plt.tight_layout()
     if ffmpeg_writer is not None:
         ffmpeg_writer.grab_frame()
         plt.clf()
